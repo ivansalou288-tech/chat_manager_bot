@@ -3,13 +3,14 @@ import os
 from pathlib import Path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from aiogram import types
-from main.config import about_user_sdk, klan
+from main.config import about_user_sdk, klan, dp, bot
 from aiogram.types import ChatPermissions
 from aiogram import executor, Bot, Dispatcher, types
 from aiogram.dispatcher.filters import Text
 #from config import *
 import sqlite3
 from aiogram.utils.exceptions import *
+
 
 curent_path = (Path(__file__)).parent.parent
 main_path = curent_path / 'databases' / 'Base_bot.db'
@@ -19,11 +20,11 @@ tur_path = curent_path / 'databases' / 'tournaments.db'
 dinamik_path = curent_path / 'databases' / 'din_data.db'
 
 
-token="8451829699:AAE_tfApKWq3r82i0U7yD98RCcQPIMmMT1Q"
-api_id =21842840
-api_hash ="1db0b6e807c90e6364287ad8af7fa655"
-bot = Bot(token=token)
-dp = Dispatcher(bot)
+# token="8451829699:AAE_tfApKWq3r82i0U7yD98RCcQPIMmMT1Q"
+# api_id =21842840
+# api_hash ="1db0b6e807c90e6364287ad8af7fa655"
+# bot = Bot(token=token)
+# dp = Dispatcher(bot)
 
 class Person:
     def __init__(self, user_id, card):
@@ -33,6 +34,9 @@ class Person:
 
 @dp.message_handler(commands=["мафия", " мафия"], commands_prefix=["!", '.', '/'])
 async def get_ref(message: types.Message):
+  if message.from_user.id == message.from_user.id:
+      await message.answer("В разработке")
+      return 
   link = 'https://t.me/for_klan_tests_bot?start=registr_maf'
   button = types.InlineKeyboardButton(text="Присоединиться", url=link)
   keyboard = types.InlineKeyboardMarkup(row_width=1).add(button)
@@ -82,12 +86,14 @@ async def start(message):
 
 @dp.callback_query_handler(text="commands")
 async def successful_recom1(call: types.CallbackQuery):
+    connection = sqlite3.connect(main_path, check_same_thread=False)
+    cursor = connection.cursor()
     text = cursor.execute('SELECT text FROM texts WHERE text_name = ?', ('commands',)).fetchall()[0][0]
     await bot.send_message(call.from_user.id, f'🗓<b>Список команд чата:</b>\n\n{text}', parse_mode=ParseMode.HTML, disable_web_page_preview=True)
     await bot.answer_callback_query(call.id, text='')
 
 
 
-
-if __name__ == "__main__":
-    executor.start_polling(dp)
+#
+# if __name__ == "__main__":
+#     executor.start_polling(dp)

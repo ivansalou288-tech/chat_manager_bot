@@ -12,7 +12,7 @@ from config import *
 from modules.farm import *
 from modules.kasik import *
 from modules.turnaments import *
-
+from modules.mafia import *
 @dp.callback_query_handler(text="successful_recom1")
 async def successful_recom1(call: types.CallbackQuery):
     if call.from_user.id not in can_recommend_users:
