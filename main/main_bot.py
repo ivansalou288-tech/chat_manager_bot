@@ -7,7 +7,7 @@ from aiogram.utils.exceptions import CantInitiateConversation, MessageNotModifie
 from aiogram.types import ContentType
 from password_generator import PasswordGenerator
 from telebot.types import CopyTextButton
-
+#Тестовое изменение
 from config import *
 from modules.farm import *
 from modules.kasik import *
