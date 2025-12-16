@@ -1,4 +1,6 @@
-
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from datetime import datetime, timedelta
 from aiogram.types import ChatPermissions
 from aiogram import executor, Bot, Dispatcher, types
@@ -7,7 +9,7 @@ import asyncio
 #from config import *
 import sqlite3
 from aiogram.utils.exceptions import *
-from utils import CopyTextButton
+from main.utils import CopyTextButton
 from path import Path
 import requests
 from googletrans import Translator
