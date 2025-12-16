@@ -1,1 +1,7 @@
 print("mafia")
+print("mafia")
+print("mafia")
+print("mafia")
+print("mafia")
+print("mafia")
+print("mafia")
