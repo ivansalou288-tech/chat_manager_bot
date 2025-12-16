@@ -36,7 +36,7 @@ class Person:
 async def get_ref(message: types.Message):
   if message.from_user.id == message.from_user.id:
       await message.answer("В разработке")
-      return 
+      return
   link = 'https://t.me/for_klan_tests_bot?start=registr_maf'
   button = types.InlineKeyboardButton(text="Присоединиться", url=link)
   keyboard = types.InlineKeyboardMarkup(row_width=1).add(button)

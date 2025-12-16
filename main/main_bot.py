@@ -5,8 +5,9 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from aiogram.utils.exceptions import CantInitiateConversation, MessageNotModified 
 from aiogram.types import ContentType
-from password_generator import PasswordGenerator
 from telebot.types import CopyTextButton
+from password_generator import PasswordGenerator
+
 #Тестовое изменение
 from config import *
 from modules.farm import *
