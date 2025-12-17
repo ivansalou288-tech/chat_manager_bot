@@ -54,6 +54,10 @@ async def handler(message: types.Message):
     
 
     await message.answer(f"Вы зарегестрированны")
+    user_id = message.from_user.id
+    username = message.from_user.username
+    user_name = message.from_user.full_name
+
 
 
 
