@@ -11,7 +11,7 @@ import random
 import asyncio
 import time
 import re
-#from config import *
+#?from config import *
 import sqlite3
 from aiogram.utils.exceptions import *
 from password_generator import PasswordGenerator
@@ -27,7 +27,7 @@ mafia_path = curent_path / 'databases' / 'mafia.db'
 
 
 
-QUANTITY_OF_ROLES = {4: '0 1 1 0 1 1', 5: '2 1 0 1 1 0', 
+QUANTITY_OF_ROLES = {4: '2 1 0 0 1 0', 5: '2 1 0 1 1 0',
                      6: '3 1 0 1 1 0', 7: '4 1 0 1 1 0', 8: '4 1 1 1 1 0',
                      9: '4 1 1 1 1 1', 10: '4 1 2 1 1 1'}
 
@@ -37,34 +37,36 @@ ROLES_ABOUT = {
     "don_mafia": "🕴 Дон - Глава мафии. Ночью выбирает жертву вместе с мафией и осуществляет убийство.",
     "mafia": "💀 Мафия - Член мафиозной семьи. Ночью выбирают жертву вместе с Доном. Может занять роль Дона, если тот погибнет.",
     "police": "🕵️‍♂️ Комиссар - Полиция/следователь. Ночью может либо узнать роль одного игрока, либо убить его.",
-    # "👮♂️ Сержант": "Помощник Комиссара. Знает о проверках Комиссара и может стать новым Комиссаром, если тот умрёт.",
+    #* "👮♂️ Сержант": "Помощник Комиссара. Знает о проверках Комиссара и может стать новым Комиссаром, если тот умрёт.",
     "doctor": "🏥 Доктор - Ночной защитник. Может спасти одного игрока от убийства. Один раз за игру может спасти себя.",
     "maniak": "🔪 Маньяк - Нейтральная убийственная роль. Каждую ночь убивает игрока. Цель — остаться последним выжившим."
 }
 
-# token="8451829699:AAE_tfApKWq3r82i0U7yD98RCcQPIMmMT1Q"
-# api_id =21842840
-# api_hash ="1db0b6e807c90e6364287ad8af7fa655"
-# bot = Bot(token=token)
-# dp = Dispatcher(bot)
+#? token="8451829699:AAE_tfApKWq3r82i0U7yD98RCcQPIMmMT1Q"
+#? api_id =21842840
+#? api_hash ="1db0b6e807c90e6364287ad8af7fa655"
+#? bot = Bot(token=token)
+#? dp = Dispatcher(bot)
 
+#* Класс для хранения данных игрока (ID и роль)
 class Person:
     def __init__(self, user_id, card):
         self.user_id = user_id
         self.card = card
 
 
-# -------------------------
-# Between-nights voting flow
-# -------------------------
-_VOTE_EVENTS = {}  # game -> asyncio.Event
+#? -------------------------
+#? Between-nights voting flow
+#? -------------------------
+_VOTE_EVENTS = {}  #? game -> asyncio.Event
 
-# -------------------------
-# Night auto-finish flow
-# -------------------------
-_NIGHT_LOCKS = {}  # game -> asyncio.Lock
+#? -------------------------
+#? Night auto-finish flow
+#? -------------------------
+_NIGHT_LOCKS = {}  #? game -> asyncio.Lock
 
 
+# * Получает блокировку для конкретной игры (предотвращает одновременное завершение ночи)
 def _get_night_lock(game: str) -> asyncio.Lock:
     lock = _NIGHT_LOCKS.get(game)
     if lock is None:
@@ -73,6 +75,7 @@ def _get_night_lock(game: str) -> asyncio.Lock:
     return lock
 
 
+# * Создает таблицы для отслеживания состояния ночи и действий игроков
 def _ensure_night_state_tables(cursor, game: str):
     game = _safe_game_id(game)
     cursor.execute(
@@ -97,6 +100,7 @@ def _ensure_night_state_tables(cursor, game: str):
     )
 
 
+# * Начинает новую ночь и регистрирует всех активных игроков с ролями
 def _begin_new_night(cursor, game: str, actors):
     """
     Starts a new night round for this game and registers required actors.
@@ -118,10 +122,10 @@ def _begin_new_night(cursor, game: str, actors):
         (game, night_no, "open"),
     )
 
-    # Keep the actions table small (remove older nights)
+    #? Keep the actions table small (remove older nights)
     cursor.execute(f"DELETE FROM night_actions_{game} WHERE night_no < ?", (night_no - 2,))
 
-    # Register required actors for this night
+    #? Register required actors for this night
     for actor_id, role in actors:
         cursor.execute(
             f"""
@@ -137,6 +141,7 @@ def _begin_new_night(cursor, game: str, actors):
     return night_no
 
 
+# * Отмечает что игрок завершил свое ночное действие
 def _mark_night_done(cursor, game: str, actor_id: int):
     game = _safe_game_id(game)
     row = cursor.execute("SELECT night_no, status FROM night_meta WHERE game = ?", (game,)).fetchone()
@@ -151,6 +156,7 @@ def _mark_night_done(cursor, game: str, actor_id: int):
     )
 
 
+# * Проверяет завершили ли все игроки свои действия и автоматически заканчивает ночь
 async def _maybe_finish_night(trigger_message, game: str):
     """
     If all required actors acted for the current night -> calls end_night().
@@ -183,7 +189,7 @@ async def _maybe_finish_night(trigger_message, game: str):
         ).fetchone()[0]
 
         if total and done >= total:
-            # mark as closing to avoid double-trigger from concurrent callbacks
+            # * mark as closing to avoid double-trigger from concurrent callbacks
             cursor.execute("UPDATE night_meta SET status = ? WHERE game = ?", ("closing", game))
             connection.commit()
             should_finish = True
@@ -192,13 +198,15 @@ async def _maybe_finish_night(trigger_message, game: str):
         await end_night(trigger_message, game)
 
 
+# * Проверяет безопасность ID игры для использования в SQL запросах
 def _safe_game_id(game: str) -> str:
-    # game comes from generated start-code; still keep it safe for dynamic table names
+    # ? game comes from generated start-code; still keep it safe for dynamic table names
     if not isinstance(game, str) or not re.fullmatch(r"[A-Za-z0-9_]+", game):
         raise ValueError("Invalid game id")
     return game
 
 
+#* Создает таблицы для системы голосования между ночами
 def _ensure_vote_tables(cursor, game: str):
     game = _safe_game_id(game)
     cursor.execute(
@@ -226,11 +234,13 @@ def _ensure_vote_tables(cursor, game: str):
     )
 
 
+# * Преобразует список кандидатов в строку для хранения в БД
 def _candidates_to_text(candidates):
-    # store as comma-separated ints
+    #? store as comma-separated ints
     return ",".join(str(int(x)) for x in candidates)
 
 
+# * Преобразует строку кандидатов обратно в список
 def _text_to_candidates(text: str):
     if not text:
         return []
@@ -243,6 +253,7 @@ def _text_to_candidates(text: str):
     return out
 
 
+# * Получает список всех живых игроков в игре
 async def _get_alive_players(cursor, game: str):
     game = _safe_game_id(game)
     rows = cursor.execute(
@@ -252,6 +263,7 @@ async def _get_alive_players(cursor, game: str):
     return [r[0] for r in rows]
 
 
+# * Получает имя игрока по его ID
 async def _get_player_name(cursor, game: str, player_id: int) -> str:
     row = cursor.execute(
         "SELECT player_name FROM players WHERE game = ? AND player_id = ?",
@@ -260,6 +272,7 @@ async def _get_player_name(cursor, game: str, player_id: int) -> str:
     return row[0][0] if row else str(player_id)
 
 
+# * Создает сообщение с кнопками для голосования в групповом чате
 async def _start_vote_round(chat_id: int, game: str, round_no: int, candidates):
     """
     Posts a single vote message in the group chat with inline buttons for candidates.
@@ -272,11 +285,11 @@ async def _start_vote_round(chat_id: int, game: str, round_no: int, candidates):
     candidates = [int(x) for x in candidates]
     candidates_text = _candidates_to_text(candidates)
 
-    # Clear any stale votes for this round (if the bot restarts mid-game)
+    #? Clear any stale votes for this round (if the bot restarts mid-game)
     cursor.execute(f"DELETE FROM votes_{game} WHERE round = ?", (round_no,))
     connection.commit()
 
-    # Save state (message_id will be updated after send)
+    #? Save state (message_id will be updated after send)
     cursor.execute(
         """
         INSERT INTO vote_state (game, round, chat_id, message_id, candidates, status)
@@ -323,7 +336,7 @@ async def _start_vote_round(chat_id: int, game: str, round_no: int, candidates):
     )
     connection.commit()
 
-    # prepare event for this round
+    #? prepare event for this round
     ev = _VOTE_EVENTS.get(game)
     if ev is None or ev.is_set():
         ev = asyncio.Event()
@@ -334,6 +347,7 @@ async def _start_vote_round(chat_id: int, game: str, round_no: int, candidates):
     return sent.message_id
 
 
+# * Обрабатывает голоса в дневном голосовании между ночами
 @dp.callback_query_handler(Text(startswith='dv_', ignore_case=True))
 async def between_nights_vote_callback(call: types.CallbackQuery):
     """
@@ -360,7 +374,7 @@ async def between_nights_vote_callback(call: types.CallbackQuery):
     _ensure_vote_tables(cursor, game)
     connection.commit()
 
-    # Check state is open and round matches
+    #? Check state is open and round matches
     state_rows = cursor.execute(
         "SELECT round, chat_id, message_id, candidates, status FROM vote_state WHERE game = ?",
         (game,),
@@ -376,21 +390,18 @@ async def between_nights_vote_callback(call: types.CallbackQuery):
         await call.answer("Этот раунд уже закрыт", show_alert=False)
         return
 
-    # only in correct chat message
+    #? only in correct chat message
     if call.message and (call.message.chat.id != int(chat_id) or call.message.message_id != int(message_id)):
         await call.answer("Неактуальное сообщение", show_alert=False)
         return
 
-    # voter must be alive
-    alive_check = cursor.execute(
-        f"SELECT liveness FROM game_{game} WHERE player = ?",
-        (voter_id,),
-    ).fetchall()
+    #? voter must be alive
+    alive_check = cursor.execute(f"SELECT liveness FROM game_{game} WHERE player = ?",(voter_id,),).fetchall()
     if not alive_check or alive_check[0][0] != "True":
         await call.answer("Ты не можешь голосовать", show_alert=True)
         return
 
-    # target must be allowed and alive
+    #? target must be allowed and alive
     if int(target_id) not in set(candidates):
         await call.answer("Нельзя голосовать за этого игрока", show_alert=True)
         return
@@ -403,7 +414,7 @@ async def between_nights_vote_callback(call: types.CallbackQuery):
         await call.answer("Этот игрок уже выбыл", show_alert=True)
         return
 
-    # Upsert vote (one vote per alive voter per round)
+    #? Upsert vote (one vote per alive voter per round)
     now_ts = int(time.time())
     cursor.execute(
         f"""
@@ -417,7 +428,7 @@ async def between_nights_vote_callback(call: types.CallbackQuery):
     )
     connection.commit()
 
-    # Update progress in the vote message
+    #? Update progress in the vote message
     alive_players = await _get_alive_players(cursor, game)
     voted_count = cursor.execute(
         f"SELECT COUNT(*) FROM votes_{game} WHERE round = ?",
@@ -443,7 +454,7 @@ async def between_nights_vote_callback(call: types.CallbackQuery):
 
     await call.answer("Голос учтён", show_alert=False)
 
-    # Finish round when all alive voted
+    #? Finish round when all alive voted
     if voted_count >= len(alive_players):
         cursor.execute("UPDATE vote_state SET status = ? WHERE game = ?", ("closed", game))
         connection.commit()
@@ -454,6 +465,7 @@ async def between_nights_vote_callback(call: types.CallbackQuery):
         ev.set()
 
 
+# * Подсчитывает голоса и возвращает результаты голосования
 def _tally_votes(votes_rows, allowed_targets):
     allowed_set = set(int(x) for x in allowed_targets)
     tally = {int(x): 0 for x in allowed_set}
@@ -464,6 +476,7 @@ def _tally_votes(votes_rows, allowed_targets):
     return tally
 
 
+# * Завершает раунд голосования и определяет победителя или лидеров при ничьей
 async def _finalize_vote_round(cursor, game: str, round_no: int, candidates):
     """
     Returns (winner_id, leaders_list, tally_dict)
@@ -484,6 +497,7 @@ async def _finalize_vote_round(cursor, game: str, round_no: int, candidates):
     return None, leaders, tally
 
 
+# * Проводит полное голосование между ночами с возможными переголосованиями и исключает игрока
 async def between_nights_vote_and_kill(message: types.Message, game: str) -> bool:
     """
     Runs the between-nights voting in the group chat.
@@ -499,7 +513,7 @@ async def between_nights_vote_and_kill(message: types.Message, game: str) -> boo
     _ensure_vote_tables(cursor, game)
     connection.commit()
 
-    # Find chat_id reliably
+    #? Find chat_id reliably
     try:
         chat_id = cursor.execute("SELECT chat_id FROM messages WHERE game = ?", (game,)).fetchall()[0][0]
     except Exception:
@@ -509,26 +523,26 @@ async def between_nights_vote_and_kill(message: types.Message, game: str) -> boo
     if len(alive) < 2:
         return await check_game_end(message, game)
 
-    # Round 1
+    #? Round 1
     round_no = 1
     await _start_vote_round(chat_id, game, round_no, alive)
 
     ev = _VOTE_EVENTS.get(game)
     try:
-        await asyncio.wait_for(ev.wait(), timeout=300)  # 5 minutes
+        await asyncio.wait_for(ev.wait(), timeout=300)  #? 5 minutes
     except asyncio.TimeoutError:
-        # proceed with what we have
+        #? proceed with what we have
         pass
 
     winner, leaders, _tally = await _finalize_vote_round(cursor, game, round_no, alive)
 
-    # Tie -> revote among leaders only
+    #? Tie -> revote among leaders only
     if winner is None and len(leaders) >= 2:
         round_no = 2
         await _start_vote_round(chat_id, game, round_no, leaders)
         ev = _VOTE_EVENTS.get(game)
         try:
-            await asyncio.wait_for(ev.wait(), timeout=180)  # 3 minutes
+            await asyncio.wait_for(ev.wait(), timeout=180)  #? 3 minutes
         except asyncio.TimeoutError:
             pass
 
@@ -541,22 +555,23 @@ async def between_nights_vote_and_kill(message: types.Message, game: str) -> boo
     if winner is None:
         winner = random.choice(alive)
 
-    # Kill voted player
+    #? Kill voted player
     cursor.execute(f"UPDATE game_{game} SET liveness = ? WHERE player = ?", ("False", int(winner)))
     connection.commit()
 
     dead_name = await _get_player_name(cursor, game, int(winner))
     await bot.send_message(chat_id, f"⚖️ По итогам голосования исключён: {dead_name}")
 
-    # Check end after vote kill
+    #? Check end after vote kill
     if await check_game_end(message, game):
         return True
     return False
 
 
+# * Создает новую игру мафии и генерирует ссылку для регистрации игроков
 @dp.message_handler(commands=["мафия", " мафия"], commands_prefix=["!", '.', '/'])
 async def get_ref(message: types.Message):
-    if message.from_user.id == message.from_user.id:
+    if message.from_user.id == message.chat.id:
         await message.answer("В разработке")
         return
     
@@ -565,7 +580,7 @@ async def get_ref(message: types.Message):
 
     pwo = PasswordGenerator()
     code = pwo.shuffle_password('abhtsyufjkx12345678', 8)
-    link = f'https://t.me/for_klan_tests_bot?start={code}'
+    link = f'https://t.me/werty_chat_manager_bot?start={code}'
     button = types.InlineKeyboardButton(text="Присоединиться", url=link)
     keyboard = types.InlineKeyboardMarkup(row_width=1).add(button)
     try:
@@ -580,7 +595,7 @@ async def get_ref(message: types.Message):
 
 
 
-# хендлер для расшифровки ссылки
+# * Обрабатывает регистрацию игроков по ссылке и добавляет их в игру
 @dp.message_handler(commands=["start"])
 async def handler(message: types.Message):
     args = message.get_args()
@@ -611,7 +626,7 @@ async def handler(message: types.Message):
 
 
 
-    link = f'https://t.me/for_klan_tests_bot?start={args}'
+    link = f'https://t.me/werty_chat_manager_bot?start={args}'
     button = types.InlineKeyboardButton(text="Присоединиться", url=link)
     keyboard = types.InlineKeyboardMarkup(row_width=1).add(button)
     new_text = f'{text}\n<a href="https://t.me/{username}">{user_name}</a>'
@@ -622,6 +637,7 @@ async def handler(message: types.Message):
 
 
 
+# * Раздает роли игрокам случайным образом и запускает игру
 @dp.message_handler(commands=["star"], commands_prefix=["!", '.', '/'])
 async def give_roles(message: types.Message):
     global ROLES_ABOUT
@@ -635,7 +651,7 @@ async def give_roles(message: types.Message):
         await message.answer('В этом чате нет активных игр')
         return
     
-    # * раздача ролей
+    #* раздача ролей
 
 
     cursor.execute(f'''
@@ -730,25 +746,27 @@ async def give_roles(message: types.Message):
         else:
             break
         
-    # * начало игры
+    #* начало игры
 
     await start_game(message, game)
-    # cursor.execute('DELETE FROM players')
-    # connection.commit()
+    #* cursor.execute('DELETE FROM players')
+    #* connection.commit()
 
-    # cursor.execute('DELETE FROM messages')
-    # connection.commit()
+    #* cursor.execute('DELETE FROM messages')
+    #* connection.commit()
 
 
+# * Запускает игру (переходит к первой ночи)
 async def start_game(message, game):
     await start_night(message, game)
 
 
+# * Начинает ночную фазу - отправляет задания всем активным ролям
 async def start_night(message,game):
     connection = sqlite3.connect(mafia_path, check_same_thread=False)
     cursor = connection.cursor()
 
-    # Always announce night start in the group chat
+    #? Always announce night start in the group chat
     try:
         chat_id = cursor.execute('SELECT chat_id FROM messages WHERE game = ?', (game,)).fetchall()[0][0]
     except Exception:
@@ -756,7 +774,7 @@ async def start_night(message,game):
     try:
         await bot.send_message(chat_id, "🌙 Ночь началась, проверьте ЛС бота")
     except Exception:
-        # don't fail the night if we can't post to chat
+        #? don't fail the night if we can't post to chat
         pass
     try:
         doctor = cursor.execute(f'SELECT player FROM game_{game} WHERE player_card = ? AND liveness = ?', ('doctor','True')).fetchall()[0][0]
@@ -781,7 +799,7 @@ async def start_night(message,game):
     for maf in mafias:
         mafia.append(maf[0])
 
-    # Register required night actors for auto-finish
+    #? Register required night actors for auto-finish
     try:
         _ensure_night_state_tables(cursor, game)
         actors = []
@@ -798,13 +816,13 @@ async def start_night(message,game):
         _begin_new_night(cursor, game, actors)
         connection.commit()
     except Exception:
-        # If state init fails, keep game playable (manual /test can still end night)
+        #? If state init fails, keep game playable (manual /test can still end night)
         pass
     
 
-    # if mafia == []
-    #     # TODO: стоп игра 
-    #     return
+    #* if mafia == []
+    #*     #* TODO: стоп игра 
+    #*     return
     if doctor:
         await doctor_funk(message, game, doctor)
     if police:
@@ -816,6 +834,7 @@ async def start_night(message,game):
     if maniak:
         await maniak_funk(message, game, maniak)
 
+# * Отправляет доктору список игроков для лечения
 async def doctor_funk(message, game, doctor):
     connection = sqlite3.connect(mafia_path, check_same_thread=False)
     cursor = connection.cursor()
@@ -836,6 +855,7 @@ async def doctor_funk(message, game, doctor):
     await bot.send_message(chat_id=doctor, text='Кого ты хочешь вылечить?', reply_markup=keyboard)
 
 
+# * Отправляет комиссару список игроков для проверки
 async def police_funk(message, game, police):
     connection = sqlite3.connect(mafia_path, check_same_thread=False)
     cursor = connection.cursor()
@@ -854,6 +874,7 @@ async def police_funk(message, game, police):
     await bot.send_message(chat_id=police, text='Кого ты хочешь проверить?', reply_markup=keyboard)
 
 
+# * Отправляет дону мафии список игроков для убийства
 async def don_mafia_funk(message, game, don_mafia):
     connection = sqlite3.connect(mafia_path, check_same_thread=False)
     cursor = connection.cursor()
@@ -868,6 +889,7 @@ async def don_mafia_funk(message, game, don_mafia):
     await bot.send_message(chat_id=don_mafia, text='Кого ты хочешь убить?', reply_markup=keyboard)
 
 
+# * Отправляет мафии список игроков для предложения дону
 async def mafia_funk(message, game, mafia, don_mafia):
     connection = sqlite3.connect(mafia_path, check_same_thread=False)
     cursor = connection.cursor()
@@ -886,6 +908,7 @@ async def mafia_funk(message, game, mafia, don_mafia):
     await bot.send_message(chat_id=mafia, text='Кого ты хочешь предложить дону?', reply_markup=keyboard)
 
 
+# * Отправляет маньяку список игроков для убийства
 async def maniak_funk(message, game, maniak):
     connection = sqlite3.connect(mafia_path, check_same_thread=False)
     cursor = connection.cursor()
@@ -900,11 +923,12 @@ async def maniak_funk(message, game, maniak):
     await bot.send_message(chat_id=maniak, text='Кого ты хочешь убить?', reply_markup=keyboard)
 
 
+# * Завершает ночь, обрабатывает все действия и объявляет результаты
 async def end_night(message, game):
     connection = sqlite3.connect(mafia_path, check_same_thread=False)
     cursor = connection.cursor()
 
-    # mark night closed (prevents double end from concurrent callbacks)
+    #? mark night closed (prevents double end from concurrent callbacks)
     try:
         _ensure_night_state_tables(cursor, game)
         cursor.execute("UPDATE night_meta SET status = ? WHERE game = ?", ("closed", game))
@@ -912,13 +936,13 @@ async def end_night(message, game):
     except Exception:
         pass
 
-    # Resolve chat_id for posting results and next phases
+    #? Resolve chat_id for posting results and next phases
     try:
         chat_id = cursor.execute('SELECT chat_id FROM messages WHERE game = ?', (game,)).fetchall()[0][0]
     except Exception:
         chat_id = message.chat.id
     
-    # Получаем всех игроков и их статусы ночи
+    #* Получаем всех игроков и их статусы ночи
     night_data = cursor.execute(f'SELECT user, doctor, mafia, maniak FROM night_{game}').fetchall()
     
     dead_players = []
@@ -927,22 +951,22 @@ async def end_night(message, game):
     for player_data in night_data:
         user_id, doctor, mafia, maniak = player_data
         
-        # Если игрока лечил доктор - он 100% жив
+        #* Если игрока лечил доктор - он 100% жив
         if doctor == 1:
             name = cursor.execute('SELECT player_name FROM players WHERE game = ? AND player_id = ?', (game, user_id)).fetchall()[0][0]
             saved_players.append(name)
             continue
             
-        # Если игрока убивали мафия или маньяк - он мертв
+        #* Если игрока убивали мафия или маньяк - он мертв
         if mafia == 1 or maniak == 1:
             name = cursor.execute('SELECT player_name FROM players WHERE game = ? AND player_id = ?', (game, user_id)).fetchall()[0][0]
             dead_players.append(name)
-            # Обновляем статус жизни игрока
+            #* Обновляем статус жизни игрока
             cursor.execute(f'UPDATE game_{game} SET liveness = ? WHERE player = ?', ('False', user_id))
     
     connection.commit()
     
-    # Формируем сообщение о результатах ночи
+    #* Формируем сообщение о результатах ночи
     result_text = "🌅 Наступило утро!\n\n"
     
     if dead_players:
@@ -958,16 +982,16 @@ async def end_night(message, game):
     except Exception:
         await message.answer(result_text)
 
-    # Проверяем конец игры (и, если нужно, завершаем)
+    #* Проверяем конец игры (и, если нужно, завершаем)
     if await check_game_end(message, game):
         return
 
-    # Между ночами — голосование, затем снова ночь
+    #* Между ночами — голосование, затем снова ночь
     ended = await between_nights_vote_and_kill(message, game)
     if ended:
         return
 
-    # Готовим таблицу ночи для следующего раунда (пересоздаём список живых)
+    #* Готовим таблицу ночи для следующего раунда (пересоздаём список живых)
     cursor.execute(f'DELETE FROM night_{game}')
     alive_players = cursor.execute(f"SELECT player FROM game_{game} WHERE liveness = ?", ('True',)).fetchall()
     for (player_id,) in alive_players:
@@ -977,10 +1001,11 @@ async def end_night(message, game):
         )
     connection.commit()
 
-    # Запускаем новую ночь с живыми игроками
+    #* Запускаем новую ночь с живыми игроками
     await start_night(message, game)
 
 
+# * Проверяет условия окончания игры (победа мирных/мафии)
 async def check_game_end(message, game) -> bool:
     """
     True  -> игра завершена (победитель объявлен, данные по игре очищены)
@@ -1013,7 +1038,7 @@ async def check_game_end(message, game) -> bool:
         await end_game(message, game, winner="peaceful")
         return True
 
-    # Mafia wins when they control/parity the peaceful side
+    # * Mafia wins when they control/parity the peaceful side
     if mafia_alive > 0 and mafia_alive >= peaceful_alive:
         await end_game(message, game, winner="mafia")
         return True
@@ -1021,11 +1046,12 @@ async def check_game_end(message, game) -> bool:
     return False
 
 
+# * Завершает игру, объявляет победителя и очищает данные
 async def end_game(message, game, winner: str):
     connection = sqlite3.connect(mafia_path, check_same_thread=False)
     cursor = connection.cursor()
 
-    # Пытаемся получить chat_id из таблицы messages (на случай, если message не из нужного чата)
+    #* Пытаемся получить chat_id из таблицы messages (на случай, если message не из нужного чата)
     try:
         chat_id = cursor.execute('SELECT chat_id FROM messages WHERE game = ?', (game,)).fetchall()[0][0]
     except IndexError:
@@ -1041,10 +1067,10 @@ async def end_game(message, game, winner: str):
     try:
         await bot.send_message(chat_id, text)
     except Exception:
-        # если не получилось — хотя бы не падаем
+        #* если не получилось — хотя бы не падаем
         await message.answer(text)
 
-    # Чистим данные игры, чтобы можно было создать новую в этом чате
+    #* Чистим данные игры, чтобы можно было создать новую в этом чате
     cursor.execute(f'DROP TABLE IF EXISTS night_{game}')
     cursor.execute(f'DROP TABLE IF EXISTS game_{game}')
     cursor.execute('DELETE FROM players WHERE game = ?', (game,))
@@ -1052,6 +1078,7 @@ async def end_game(message, game, winner: str):
     connection.commit()
 
 
+# * Обрабатывает выбор доктора (кого лечить)
 @dp.callback_query_handler(Text(startswith='lek_', ignore_case=True))
 async def successful_recom1(call: types.CallbackQuery):
     id = int((call.data.split('lek_')[1]).split('in')[0])
@@ -1059,7 +1086,7 @@ async def successful_recom1(call: types.CallbackQuery):
     connection = sqlite3.connect(mafia_path, check_same_thread=False)
     cursor = connection.cursor()
     cursor.execute(f'UPDATE night_{game} SET doctor = ? WHERE user = ?', (1, id))
-    # mark doctor acted
+    #? mark doctor acted
     try:
         _mark_night_done(cursor, game, call.from_user.id)
     except Exception:
@@ -1070,6 +1097,7 @@ async def successful_recom1(call: types.CallbackQuery):
     await _maybe_finish_night(call.message, game)
 
     
+# * Обрабатывает проверку комиссара (узнает роль игрока)
 @dp.callback_query_handler(Text(startswith='check_', ignore_case=True))
 async def successful_recom1(call: types.CallbackQuery):
     id = int((call.data.split('check_')[1]).split('in')[0])
@@ -1079,7 +1107,7 @@ async def successful_recom1(call: types.CallbackQuery):
     name = cursor.execute('SELECT player_name FROM players WHERE game = ? AND player_id = ?', (game, id)).fetchall()[0][0]
     username = cursor.execute('SELECT player_username FROM players WHERE game = ? AND player_id = ?', (game, id)).fetchall()[0][0]
     card = cursor.execute('SELECT player_card FROM players WHERE game = ? AND player_id = ?', (game, id)).fetchall()[0][0]
-    # mark police acted (even if result differs)
+    #? mark police acted (even if result differs)
     try:
         _mark_night_done(cursor, game, call.from_user.id)
         connection.commit()
@@ -1094,6 +1122,7 @@ async def successful_recom1(call: types.CallbackQuery):
         await _maybe_finish_night(call.message, game)
         return
 
+# * Обрабатывает предложение мафии дону (кого убить)
 @dp.callback_query_handler(Text(startswith='maf_', ignore_case=True))
 async def successful_recom1(call: types.CallbackQuery):
     id = int((call.data.split('maf_')[1]).split('in')[0])
@@ -1109,7 +1138,7 @@ async def successful_recom1(call: types.CallbackQuery):
         return
     await bot.send_message(chat_id=don_mafia, text=f'Одна из мафий предлагает убить <a href="https://t.me/{username}">{name}</a>', parse_mode='html', disable_web_page_preview=True)
     await call.message.edit_text(text='Дон мафия получил ваше предложение')
-    # mark mafia member acted
+    #? mark mafia member acted
     try:
         _mark_night_done(cursor, game, call.from_user.id)
         connection.commit()
@@ -1118,6 +1147,7 @@ async def successful_recom1(call: types.CallbackQuery):
     await _maybe_finish_night(call.message, game)
 
 
+# * Обрабатывает выбор дона мафии (кого убить)
 @dp.callback_query_handler(Text(startswith='don_', ignore_case=True))
 async def successful_recom1(call: types.CallbackQuery):
     id = int((call.data.split('don_')[1]).split('in')[0])
@@ -1125,7 +1155,7 @@ async def successful_recom1(call: types.CallbackQuery):
     connection = sqlite3.connect(mafia_path, check_same_thread=False)
     cursor = connection.cursor()
     cursor.execute(f'UPDATE night_{game} SET mafia = 1 WHERE user = ?', (id,))
-    # mark don acted
+    #? mark don acted
     try:
         _mark_night_done(cursor, game, call.from_user.id)
     except Exception:
@@ -1136,6 +1166,7 @@ async def successful_recom1(call: types.CallbackQuery):
     await _maybe_finish_night(call.message, game)
 
 
+# * Обрабатывает выбор маньяка (кого убить)
 @dp.callback_query_handler(Text(startswith='man_', ignore_case=True))
 async def successful_recom1(call: types.CallbackQuery):
     id = int((call.data.split('man_')[1]).split('in')[0])
@@ -1143,7 +1174,7 @@ async def successful_recom1(call: types.CallbackQuery):
     connection = sqlite3.connect(mafia_path, check_same_thread=False)
     cursor = connection.cursor()
     cursor.execute(f'UPDATE night_{game} SET maniak = 1 WHERE user = ?', (id,))
-    # mark maniak acted
+    #? mark maniak acted
     try:
         _mark_night_done(cursor, game, call.from_user.id)
     except Exception:
@@ -1154,6 +1185,7 @@ async def successful_recom1(call: types.CallbackQuery):
     await _maybe_finish_night(call.message, game)
     
 
+# * Стартовое меню бота с информацией о клане
 async def start(message):
     if message.chat.id != message.from_user.id:
         return
@@ -1179,6 +1211,7 @@ async def start(message):
 
     await bot.send_photo(message.chat.id,photo=open(f'{curent_path}/photos/klan_ava.jpg', 'rb'), caption=f'Приветсвуем тебя в <b>WERTY | Чат-менеджер</b>\n\n{is_in_klan}\n\nЧто ты хочешь сделать?', parse_mode='html',reply_markup=keyboard)
 
+# * Показывает список доступных команд бота
 @dp.callback_query_handler(text="commands")
 async def successful_recom1(call: types.CallbackQuery):
     connection = sqlite3.connect(main_path, check_same_thread=False)
@@ -1188,6 +1221,55 @@ async def successful_recom1(call: types.CallbackQuery):
     await bot.answer_callback_query(call.id, text='')
 
 
+# * Завершает игру по команде stop и очищает все таблицы
+@dp.message_handler(commands=["stop"], commands_prefix=["!", '.', '/'])
+async def stop_game(message: types.Message):
+    if message.from_user.id != 1240656726:
+        await message.answer('нет иди нахуй')
+        return
+    connection = sqlite3.connect(mafia_path, check_same_thread=False)
+    cursor = connection.cursor()
+    
+    try:
+        cursor.execute('SELECT game FROM messages WHERE chat_id = ?', (message.chat.id,))
+        game = cursor.fetchall()[0][0]
+        game = _safe_game_id(game)
+    except IndexError:
+        await message.answer('В этом чате нет активных игр')
+        return
+    
+    # * Очищаем основные таблицы
+    cursor.execute('DELETE FROM players WHERE game = ?', (game,))
+    cursor.execute('DELETE FROM messages WHERE game = ?', (game,))
+    
+    # * Удаляем динамические таблицы созданные в процессе игры
+    cursor.execute(f'DROP TABLE IF EXISTS game_{game}')
+    cursor.execute(f'DROP TABLE IF EXISTS night_{game}')
+    cursor.execute(f'DROP TABLE IF EXISTS night_actions_{game}')
+    cursor.execute(f'DROP TABLE IF EXISTS votes_{game}')
+    
+    # * Очищаем метаданные (только если таблицы существуют)
+    try:
+        cursor.execute('DELETE FROM night_meta WHERE game = ?', (game,))
+    except sqlite3.OperationalError:
+        pass  # Таблица не существует
+    try:
+        cursor.execute('DELETE FROM vote_state WHERE game = ?', (game,))
+    except sqlite3.OperationalError:
+        pass  # Таблица не существует
+    
+    connection.commit()
+    
+    # * Очищаем события из памяти
+    if game in _VOTE_EVENTS:
+        del _VOTE_EVENTS[game]
+    if game in _NIGHT_LOCKS:
+        del _NIGHT_LOCKS[game]
+    
+    await message.answer('🛑 Игра завершена и все данные очищены')
+
+
+# * Тестовая команда для принудительного завершения ночи (только для админа)
 @dp.message_handler(commands=["test"], commands_prefix=["!", '.', '/'])
 async def get_ref(message: types.Message):
     connection = sqlite3.connect(mafia_path, check_same_thread=False)
@@ -1203,8 +1285,8 @@ async def get_ref(message: types.Message):
         await message.answer('В этом чате нет активных игр')
     
 
-# if __name__ == "__main__":
-#     executor.start_polling(dp)
+#? if __name__ == "__main__":
+#?     executor.start_polling(dp)
 
 
 
