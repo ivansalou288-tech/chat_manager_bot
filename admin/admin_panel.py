@@ -161,7 +161,8 @@ async def dk_in_chat(call):
             'close_chat': 'Изменение ограничений чата',
             'change_priv': 'Изменение приветствия чата',
             'obavlenie': 'Создание объявления',
-            'tur': 'Создание турниров'
+            'tur': 'Создание турниров',
+            'dell': 'Удаление сообщений'
         }
         for i in range(command_count):
             text = f'▫️{command_name[commans[i]]}: <b>{dk[i]}</b>'

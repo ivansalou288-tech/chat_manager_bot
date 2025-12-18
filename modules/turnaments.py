@@ -1,3 +1,6 @@
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import random
 from os.path import curdir
 from traceback import print_tb
@@ -12,6 +15,17 @@ async def create_tur(message: types.Message):
     connection = sqlite3.connect(tur_path)
     cursor = connection.cursor()
     moder_id = message.from_user.id
+
+    connection = sqlite3.connect(main_path, check_same_thread=False)
+    cursor = connection.cursor()
+    black_list=[]
+    blk = cursor.execute('SELECT user_id FROM black_list').fetchall()
+    for i in blk:
+        black_list.append(i[0])
+
+    if message.from_user.id in black_list:
+        await message.answer('В доступе отказано, ты в черном списке')
+        return
 
     if await is_successful_moder(moder_id, message.chat.id, 'tur') == False:
         await message.reply('📝Ранг модератора не достаточен для использования этой команды')

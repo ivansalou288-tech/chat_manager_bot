@@ -4,7 +4,7 @@ from datetime import datetime
 from unittest.mock import call
 
 import sqlite3
-
+import telebot
 from path import Path
 from telebot.types import CopyTextButton, InlineKeyboardButton, InlineKeyboardMarkup
 
@@ -24,7 +24,7 @@ token="8310916743:AAHqODYdviyxXhPZcsNhN4tpXeIlLm-FAJ8"
 connection = sqlite3.connect(main_path, check_same_thread=False)
 cursor = connection.cursor()
 
-import telebot
+
 
 logs_gr = -int(cursor.execute(f"SELECT chat_id FROM chat_ids WHERE chat_name = ?", ('logs_gr',)).fetchall()[0][0])
 sost_1 = -int(cursor.execute(f"SELECT chat_id FROM chat_ids WHERE chat_name = ?", ('sost_1',)).fetchall()[0][0])
@@ -35,15 +35,33 @@ bot = telebot.TeleBot(token)
 
 is_in_clan = False
 
+def links(message, sostav):
+    connection = sqlite3.connect(dinamik_path, check_same_thread=False)
+    cursor = connection.cursor()
+    if sostav == 1:
+        klan_link = bot.export_chat_invite_link(klan)
+        sostav_link =  bot.export_chat_invite_link(sost_1)
+
+
+    elif sostav == 2:
+        klan_link = bot.export_chat_invite_link(klan)
+        sostav_link = bot.export_chat_invite_link(sost_2)
+
+    bot.send_message(message.chat.id, klan_link)
+    bot.send_message(message.chat.id, sostav_link)
+    cursor.execute('DELETE FROM is_to_klan WHERE user_id = ?', (message.from_user.id,))
+    connection.commit()
+    
+
 def gaid(message):
-    id_copy = CopyTextButton(text=str(5436211851))
+    id_copy = CopyTextButton(text=str(51445023900))
 
     id_btn = InlineKeyboardButton(text="📋Скопировать айди Лидера",
                                         copy_text=id_copy)  # Внедряем текст для копирования в инлайн-кнопки
 
     keyboard = InlineKeyboardMarkup().add(id_btn)
     bot.send_message(chat_id=message.chat.id,
-                     text='Как вступить в клан?\n\n<b>1.</b> Ищешь игрока weWERTY по айди «<code>5436211851</code>» и нажимаешь на его аватарку',
+                     text='Как вступить в клан?\n\n<b>1.</b> Ищешь игрока wePiKAcHy по айди «<code>51445023900</code>» и нажимаешь на его аватарку',
                      parse_mode='html', reply_markup=keyboard)
     bot.send_media_group(chat_id=message.chat.id, media=[telebot.types.InputMediaPhoto(open('../photos/first_step.jpg', 'rb')), telebot.types.InputMediaPhoto(open(
         '../photos/second_step.jpg', 'rb'))])
@@ -87,6 +105,15 @@ def new_member(call):
         global is_in_clan
         is_in_clan = True
 
+@bot.message_handler(content_types=['photo'])
+def get_media(message):
+    connection = sqlite3.connect(dinamik_path, check_same_thread=False)
+    cursor = connection.cursor()
+    try:
+        tg_id = cursor.execute('SELECT sostav FROM is_to_klan WHERE user_id = ?',(message.from_user.id, )).fetchall()[0][0]
+    except IndexError:
+        return
+    links(message, tg_id)
 
 @bot.message_handler()
 def get_text_messages(message):
@@ -279,9 +306,17 @@ def get_text_messages(message):
 
             connection = sqlite3.connect(main_path, check_same_thread=False)
             cursor = connection.cursor()
+            try:
+                cursor.execute(f'INSERT INTO all_users (user_id, username) VALUES (?, ?)', (tg_id, username))
+                connection.commit()
+            except sqlite3.IntegrityError:
+                connection.commit()
+                cursor.execute(f'UPDATE all_users SET username = ? WHERE user_id = ?', (username, tg_id))
+                connection.commit()
+            connection.commit()
             if sostav == 1:
-                klan_link = bot.export_chat_invite_link(klan)
-                sostav_link =  bot.export_chat_invite_link(sost_1)
+                # klan_link = bot.export_chat_invite_link(klan)
+                # sostav_link =  bot.export_chat_invite_link(sost_1)
                 cursor.execute(
                     f'INSERT INTO [{-sost_1}] (tg_id, username, name, age, nik_pubg, id_pubg, nik, rang, last_date, date_vhod) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
                     (tg_id, username, user_about['name'], user_about['age'], user_about['nik_pubg'],
@@ -289,13 +324,14 @@ def get_text_messages(message):
                 connection.commit()
 
             elif sostav == 2:
-                klan_link = bot.export_chat_invite_link(klan)
-                sostav_link = bot.export_chat_invite_link(sost_2)
+                # klan_link = bot.export_chat_invite_link(klan)
+                # sostav_link = bot.export_chat_invite_link(sost_2)
                 cursor.execute(
                     f'INSERT INTO [{-sost_2}] (tg_id, username, name, age, nik_pubg, id_pubg, nik, rang, last_date, date_vhod) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
                     (tg_id, username, user_about['name'], user_about['age'], user_about['nik_pubg'],
                      user_about['id_pubg'], user_about['nik_pubg'], 0, '', now))
                 connection.commit()
+
 
             else:
                 bot.send_message(message.chat.id,
@@ -318,17 +354,29 @@ def get_text_messages(message):
                 return
             connection = sqlite3.connect(main_path, check_same_thread=False)
             cursor = connection.cursor()
+            cursor.execute('INSERT INTO black_list (user_id, rison) VALUES (?, ?)', (tg_id, ''))
+            connection.commit()  
             bot.send_message(message.chat.id,
                              f'Добро пожаловать в клан Werty!\n\nТвое описание:\nИмя: {user_about["name"]}\nВозраст: {user_about["age"]}\nАйди: {user_about["id_pubg"]}\nНик: {user_about["nik_pubg"]}\n\n Твои ссылки на состав и клан:')
-            bot.send_message(message.chat.id, klan_link)
-            bot.send_message(message.chat.id, sostav_link)
+
             bot.send_message(message.chat.id, f"!!Ознакомься!!\n\n{cursor.execute('SELECT text FROM texts WHERE text_name = ?', ('pravils',)).fetchall()[0][0]}")
             gaid(message)
+
+            bot.send_photo(chat_id=message.chat.id, photo=open(f'{curent_path}/photos/is_klan.jpg', 'rb'),caption=f"После того как ты ознакомился с информацией выше, кинь скрин того как ты кинул в клан")
+
+            
+            
             bot.send_message(logs_gr,
                              f' <a href="https://t.me/{user_about["username"]}">Пользователь</a> вошел в клан и {sostav} состав\n\nЕго описание: \nИмя: {user_about["name"]}\nВозраст: {user_about["age"]}\nАйди: {user_about["id_pubg"]}\nНик: {user_about["nik_pubg"]}',
                              parse_mode='html')
             connection.commit()
             connection.close()
+
+
+            connection = sqlite3.connect(dinamik_path, check_same_thread=False)
+            cursor = connection.cursor()
+            cursor.execute('INSERT INTO is_to_klan (user_id, sostav) VALUES (?, ?)', (tg_id, sostav))
+            connection.commit()
         connection = sqlite3.connect(main_path, check_same_thread=False)
         cursor = connection.cursor()
         try:
@@ -350,6 +398,8 @@ def get_text_messages(message):
             bot.delete_message(chat_id=message.chat.id, message_id=message.message_id - 1)
         except telebot.apihelper.ApiTelegramException:
             pass
+
+
 
 if __name__ == "__main__":
     bot.polling(none_stop=True, interval=0)

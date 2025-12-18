@@ -15,14 +15,14 @@ from aiogram import Bot, Dispatcher, executor, types
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from aiogram.utils.exceptions import MessageNotModified, BadRequest
 
-from main.config import GetUserByMessage, main_path
+from main.config import *
 
 
-token="8451829699:AAE_tfApKWq3r82i0U7yD98RCcQPIMmMT1Q"
-api_id =21842840
-api_hash ="1db0b6e807c90e6364287ad8af7fa655"
-bot = Bot(token=token)
-dp = Dispatcher(bot)
+# token="8451829699:AAE_tfApKWq3r82i0U7yD98RCcQPIMmMT1Q"
+# api_id =21842840
+# api_hash ="1db0b6e807c90e6364287ad8af7fa655"
+# bot = Bot(token=token)
+# dp = Dispatcher(bot)
 DUEL_EXPIRES_SECONDS = 90
 
 
@@ -150,6 +150,16 @@ def _extract_opponent_id(message: types.Message) -> Optional[int]:
 
 @dp.message_handler(Text(startswith=["! кубы", "!кубы"], ignore_case=True))
 async def cubes_duel_invite(message: types.Message):
+    connection = sqlite3.connect(main_path, check_same_thread=False)
+    cursor = connection.cursor()
+    black_list=[]
+    blk = cursor.execute('SELECT user_id FROM black_list').fetchall()
+    for i in blk:
+        black_list.append(i[0])
+
+    if message.from_user.id in black_list:
+        await message.answer('В доступе отказано, ты в черном списке')
+        return
     chat_id = message.chat.id
     inviter_id = message.from_user.id
 
@@ -422,7 +432,7 @@ async def cubes_duel_decline(call: types.CallbackQuery):
     await bot.answer_callback_query(call.id, text="Ок")
 
 
-if __name__ == "__main__":
-    executor.start_polling(dp)
+# if __name__ == "__main__":
+#     executor.start_polling(dp)
 
 

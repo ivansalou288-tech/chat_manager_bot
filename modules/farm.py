@@ -6,6 +6,16 @@ from main.config import *
 
 @dp.message_handler(Text(startswith=['фарма', 'ферма', 'раб раб работать'], ignore_case=True), content_types=ContentType.TEXT,is_forwarded=False)
 async def farm(message):
+    connection = sqlite3.connect(main_path, check_same_thread=False)
+    cursor = connection.cursor()
+    black_list=[]
+    blk = cursor.execute('SELECT user_id FROM black_list').fetchall()
+    for i in blk:
+        black_list.append(i[0])
+
+    if message.from_user.id in black_list:
+        await message.answer(text='❌<b>НЕЗАЧЕТ!</b> Работать на ферме можно только с процентами ежу, а ты не скидывался на покушать н1 разрабу)', parse_mode = 'html')
+        return
     user_id = message.from_user.id
     delta_bust = random.randint(3, 150)
     connection = sqlite3.connect(main_path, check_same_thread=False)

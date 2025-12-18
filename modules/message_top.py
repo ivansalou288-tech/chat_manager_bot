@@ -10,14 +10,8 @@ from aiogram import types
 from aiogram.dispatcher.filters import Text
 from aiogram.types import ContentType
 from aiogram import Bot, Dispatcher, executor, types
-from main.config import main_path, chats
-token="8451829699:AAE_tfApKWq3r82i0U7yD98RCcQPIMmMT1Q"
-api_id =21842840
-api_hash ="1db0b6e807c90e6364287ad8af7fa655"
-bot = Bot(token=token)
-dp = Dispatcher(bot)
+from main.config import main_path, chats, bot, dp
 
-_REGISTERED = False
 
 
 def _parse_limit(text: Optional[str], default: int = 10, max_limit: int = 50) -> int:
@@ -131,23 +125,3 @@ async def show_messages_top_all_time(message: types.Message) -> None:
             pass
 
 
-def register(dp) -> None:
-    """
-    Регистрирует хендлер на переданном Dispatcher.
-    Команда: "топ сообщений [N]"
-    """
-    global _REGISTERED
-    if _REGISTERED:
-        return
-    _REGISTERED = True
-
-    dp.register_message_handler(
-        show_messages_top_all_time,
-        Text(startswith=["топ сообщений", "топсообщений", "!топ сообщений", "!топсообщений"], ignore_case=True),
-        content_types=ContentType.TEXT,
-        is_forwarded=False,
-    )
-
-
-if __name__ == "__main__":
-    executor.start_polling(dp)

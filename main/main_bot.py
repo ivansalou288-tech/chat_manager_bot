@@ -15,6 +15,7 @@ from modules.kasik import *
 from modules.turnaments import *
 from modules.mafia import *
 from modules.cubes import *
+from modules.message_top import *
 
 @dp.callback_query_handler(text="successful_recom1")
 async def successful_recom1(call: types.CallbackQuery):
@@ -615,8 +616,17 @@ async def bot_check(message):
 
 @dp.message_handler(Text(startswith=['моя статья'], ignore_case=True), content_types=ContentType.TEXT,is_forwarded=False)
 async def vagn_abavlenie(message):
-    connection = sqlite3.connect(main_path)
+    connection = sqlite3.connect(main_path, check_same_thread=False)
     cursor = connection.cursor()
+    black_list=[]
+    blk = cursor.execute('SELECT user_id FROM black_list').fetchall()
+    for i in blk:
+        black_list.append(i[0])
+
+    if message.from_user.id in black_list:
+        await message.answer('В доступе отказано, ты в черном списке')
+        return
+
     if message.chat.id == message.from_user.id:
         await message.answer(
             '📝Эта команда предназначена для использования в групповых чатах, а не в личных сообщениях!')
@@ -2976,6 +2986,14 @@ async def get_username(message: types.Message):
         connection.commit()
     except sqlite3.OperationalError:
         pass
+    try:
+        cursor.execute(f'INSERT INTO all_users (user_id, username) VALUES (?, ?)', (user_id, username))
+        connection.commit()
+    except sqlite3.IntegrityError:
+        connection.commit()
+        cursor.execute(f'UPDATE all_users SET username = ? WHERE user_id = ?', (username, user_id))
+        connection.commit()
+    connection.commit()
     if is_auto_unmute == False:
         print('auto_unmute')
         await auto_unmute(message)
@@ -2986,6 +3004,7 @@ async def get_username(message: types.Message):
         print('posting')
         await shedul_posting(message)
     return username
+
 
 async def shedul_posting(message):
     global posting

@@ -1,3 +1,6 @@
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from password_generator import PasswordGenerator
 from datetime import datetime, timedelta
 from aiogram.types import ChatPermissions, InlineKeyboardButton, InlineKeyboardMarkup, ParseMode
@@ -25,6 +28,14 @@ kasik_path = curent_path / 'databases' / 'kasik.db'
 
 @dp.message_handler(Text(startswith=['! казик', '!казик'], ignore_case=True))  # Снятие преда
 async def kasik(message: types.Message):
+    connection = sqlite3.connect(main_path, check_same_thread=False)
+    cursor = connection.cursor()
+    black_list=[]
+    blk = cursor.execute('SELECT user_id FROM black_list').fetchall()
+    for i in blk:
+        black_list.append(i[0])
+
+
     #  if message.from_user.id != 1240656726:
     #     return
     if message.chat.id == message.from_user.id:
@@ -35,6 +46,9 @@ async def kasik(message: types.Message):
         await message.answer('кыш')
         return
     
+    if message.from_user.id in black_list:
+        await message.answer('В доступе отказано, ты в черном списке')
+        return
 
     connection = sqlite3.connect(kasik_path, check_same_thread=False)
     cursor = connection.cursor()

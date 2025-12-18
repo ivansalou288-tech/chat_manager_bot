@@ -145,7 +145,7 @@ class GetUserByMessage:
         try:
             username = (message.text.split('@')[1]).split()[0]
             user_id = int(
-                cursor.execute(f"SELECT tg_id FROM [{-(klan)}] WHERE username=?", (username,)).fetchall()[0][0])
+                cursor.execute(f"SELECT user_id FROM all_users WHERE username=?", (username,)).fetchall()[0][0])
             return user_id
         except IndexError:
             pass
@@ -158,7 +158,7 @@ class GetUserByMessage:
 
     def getUsernameByID(self, user_id):
         try:
-            username = cursor.execute(f"SELECT username FROM [{-(klan)}] WHERE tg_id=?", (self.user_id,)).fetchall()[0][0]
+            username = cursor.execute(f"SELECT username FROM all_users WHERE user_id=?", (self.user_id,)).fetchall()[0][0]
             return username
         except IndexError:
             return 'Отсутвует'
@@ -229,7 +229,7 @@ class GetUserByID:
 
     def getUsernameByID(self, user_id):
         try:
-            username = cursor.execute(f"SELECT username FROM [{-(klan)}] WHERE tg_id=?", (self.user_id,)).fetchall()[0][
+            username = cursor.execute(f"SELECT username FROM all_users WHERE user_id=?", (self.user_id,)).fetchall()[0][
                 0]
             return username
         except IndexError:
@@ -663,6 +663,7 @@ async def snat_pred(call: types.CallbackQuery):
     else:
         await bot.answer_callback_query(call.id, text='Не для тебя кнопку создавали', show_alert=True)
         return
+
 @dp.callback_query_handler(text = "1warn")
 async def warn_1(call: types.CallbackQuery):
     connection = sqlite3.connect(warn_path, check_same_thread=False)
@@ -766,7 +767,13 @@ async def insert_ban_user(user_id, user_men, moder_men, comments, message_id, ch
         cursor.execute(f'UPDATE [{-(chat_id)}bans] SET user_men = ? WHERE tg_id = ?', (user_men, user_id))
         cursor.execute(f'UPDATE [{-(chat_id)}bans] SET moder_men = ? WHERE tg_id = ?', (moder_men, user_id))
     connection.commit()
+    try:
+        cursor.execute(f'DELETE FROM [{-(chat_id)}] WHERE tg_id = ?', (user_id, ))
+        connection.commit()
+    except sqlite3.OperationalError:
+        pass
 
+    connection.commit()
 async def mute_user(user_id, chat_id, muteint, mutetype, message, comments):
     connection = sqlite3.connect(main_path, check_same_thread=False)
     cursor = connection.cursor()
