@@ -27,7 +27,7 @@ mafia_path = curent_path / 'databases' / 'mafia.db'
 
 
 
-QUANTITY_OF_ROLES = {4: '0 1 1 0 1 1', 5: '0 1 2 1 1 0', 
+QUANTITY_OF_ROLES = {4: '0 1 1 0 1 1', 5: '2 1 0 1 1 0', 
                      6: '3 1 0 1 1 0', 7: '4 1 0 1 1 0', 8: '4 1 1 1 1 0',
                      9: '4 1 1 1 1 1', 10: '4 1 2 1 1 1'}
 
@@ -58,6 +58,138 @@ class Person:
 # Between-nights voting flow
 # -------------------------
 _VOTE_EVENTS = {}  # game -> asyncio.Event
+
+# -------------------------
+# Night auto-finish flow
+# -------------------------
+_NIGHT_LOCKS = {}  # game -> asyncio.Lock
+
+
+def _get_night_lock(game: str) -> asyncio.Lock:
+    lock = _NIGHT_LOCKS.get(game)
+    if lock is None:
+        lock = asyncio.Lock()
+        _NIGHT_LOCKS[game] = lock
+    return lock
+
+
+def _ensure_night_state_tables(cursor, game: str):
+    game = _safe_game_id(game)
+    cursor.execute(
+        """
+        CREATE TABLE IF NOT EXISTS night_meta (
+            game TEXT PRIMARY KEY,
+            night_no INTEGER NOT NULL,
+            status TEXT NOT NULL
+        )
+        """
+    )
+    cursor.execute(
+        f"""
+        CREATE TABLE IF NOT EXISTS night_actions_{game} (
+            night_no INTEGER NOT NULL,
+            actor INTEGER NOT NULL,
+            role TEXT NOT NULL,
+            done INTEGER NOT NULL DEFAULT 0,
+            PRIMARY KEY (night_no, actor)
+        )
+        """
+    )
+
+
+def _begin_new_night(cursor, game: str, actors):
+    """
+    Starts a new night round for this game and registers required actors.
+    actors: list[tuple[int, str]] -> (actor_id, role_name)
+    Returns night_no
+    """
+    game = _safe_game_id(game)
+    row = cursor.execute("SELECT night_no FROM night_meta WHERE game = ?", (game,)).fetchone()
+    night_no = 1 if row is None else int(row[0]) + 1
+
+    cursor.execute(
+        """
+        INSERT INTO night_meta (game, night_no, status)
+        VALUES (?, ?, ?)
+        ON CONFLICT(game) DO UPDATE SET
+            night_no=excluded.night_no,
+            status=excluded.status
+        """,
+        (game, night_no, "open"),
+    )
+
+    # Keep the actions table small (remove older nights)
+    cursor.execute(f"DELETE FROM night_actions_{game} WHERE night_no < ?", (night_no - 2,))
+
+    # Register required actors for this night
+    for actor_id, role in actors:
+        cursor.execute(
+            f"""
+            INSERT INTO night_actions_{game} (night_no, actor, role, done)
+            VALUES (?, ?, ?, 0)
+            ON CONFLICT(night_no, actor) DO UPDATE SET
+                role=excluded.role,
+                done=excluded.done
+            """,
+            (night_no, int(actor_id), str(role)),
+        )
+
+    return night_no
+
+
+def _mark_night_done(cursor, game: str, actor_id: int):
+    game = _safe_game_id(game)
+    row = cursor.execute("SELECT night_no, status FROM night_meta WHERE game = ?", (game,)).fetchone()
+    if not row:
+        return
+    night_no, status = int(row[0]), str(row[1])
+    if status != "open":
+        return
+    cursor.execute(
+        f"UPDATE night_actions_{game} SET done = 1 WHERE night_no = ? AND actor = ?",
+        (night_no, int(actor_id)),
+    )
+
+
+async def _maybe_finish_night(trigger_message, game: str):
+    """
+    If all required actors acted for the current night -> calls end_night().
+    Uses DB state to avoid double-finishing.
+    """
+    game = _safe_game_id(game)
+    lock = _get_night_lock(game)
+
+    should_finish = False
+    async with lock:
+        connection = sqlite3.connect(mafia_path, check_same_thread=False)
+        cursor = connection.cursor()
+        _ensure_night_state_tables(cursor, game)
+
+        row = cursor.execute("SELECT night_no, status FROM night_meta WHERE game = ?", (game,)).fetchone()
+        if not row:
+            return
+
+        night_no, status = int(row[0]), str(row[1])
+        if status != "open":
+            return
+
+        total = cursor.execute(
+            f"SELECT COUNT(*) FROM night_actions_{game} WHERE night_no = ?",
+            (night_no,),
+        ).fetchone()[0]
+        done = cursor.execute(
+            f"SELECT COUNT(*) FROM night_actions_{game} WHERE night_no = ? AND done = 1",
+            (night_no,),
+        ).fetchone()[0]
+
+        if total and done >= total:
+            # mark as closing to avoid double-trigger from concurrent callbacks
+            cursor.execute("UPDATE night_meta SET status = ? WHERE game = ?", ("closing", game))
+            connection.commit()
+            should_finish = True
+
+    if should_finish:
+        await end_night(trigger_message, game)
 
 
 def _safe_game_id(game: str) -> str:
@@ -615,7 +747,17 @@ async def start_game(message, game):
 async def start_night(message,game):
     connection = sqlite3.connect(mafia_path, check_same_thread=False)
     cursor = connection.cursor()
-    await message.answer("Ночь началась, проверьте ЛС бота")
+
+    # Always announce night start in the group chat
+    try:
+        chat_id = cursor.execute('SELECT chat_id FROM messages WHERE game = ?', (game,)).fetchall()[0][0]
+    except Exception:
+        chat_id = message.chat.id
+    try:
+        await bot.send_message(chat_id, "🌙 Ночь началась, проверьте ЛС бота")
+    except Exception:
+        # don't fail the night if we can't post to chat
+        pass
     try:
         doctor = cursor.execute(f'SELECT player FROM game_{game} WHERE player_card = ? AND liveness = ?', ('doctor','True')).fetchall()[0][0]
     except IndexError:
@@ -638,6 +780,26 @@ async def start_night(message,game):
     mafia = []
     for maf in mafias:
         mafia.append(maf[0])
+
+    # Register required night actors for auto-finish
+    try:
+        _ensure_night_state_tables(cursor, game)
+        actors = []
+        if doctor:
+            actors.append((int(doctor), "doctor"))
+        if police:
+            actors.append((int(police), "police"))
+        if don_mafia:
+            actors.append((int(don_mafia), "don_mafia"))
+        for mid in mafia:
+            actors.append((int(mid), "mafia"))
+        if maniak:
+            actors.append((int(maniak), "maniak"))
+        _begin_new_night(cursor, game, actors)
+        connection.commit()
+    except Exception:
+        # If state init fails, keep game playable (manual /test can still end night)
+        pass
     
 
     # if mafia == []
@@ -741,6 +903,20 @@ async def maniak_funk(message, game, maniak):
 async def end_night(message, game):
     connection = sqlite3.connect(mafia_path, check_same_thread=False)
     cursor = connection.cursor()
+
+    # mark night closed (prevents double end from concurrent callbacks)
+    try:
+        _ensure_night_state_tables(cursor, game)
+        cursor.execute("UPDATE night_meta SET status = ? WHERE game = ?", ("closed", game))
+        connection.commit()
+    except Exception:
+        pass
+
+    # Resolve chat_id for posting results and next phases
+    try:
+        chat_id = cursor.execute('SELECT chat_id FROM messages WHERE game = ?', (game,)).fetchall()[0][0]
+    except Exception:
+        chat_id = message.chat.id
     
     # Получаем всех игроков и их статусы ночи
     night_data = cursor.execute(f'SELECT user, doctor, mafia, maniak FROM night_{game}').fetchall()
@@ -777,7 +953,10 @@ async def end_night(message, game):
     if saved_players:
         result_text += f"🏥 Доктор спас: {', '.join(saved_players)}\n"
     
-    await message.answer(result_text)
+    try:
+        await bot.send_message(chat_id, result_text)
+    except Exception:
+        await message.answer(result_text)
 
     # Проверяем конец игры (и, если нужно, завершаем)
     if await check_game_end(message, game):
@@ -834,7 +1013,8 @@ async def check_game_end(message, game) -> bool:
         await end_game(message, game, winner="peaceful")
         return True
 
-    if peaceful_alive == 0:
+    # Mafia wins when they control/parity the peaceful side
+    if mafia_alive > 0 and mafia_alive >= peaceful_alive:
         await end_game(message, game, winner="mafia")
         return True
 
@@ -879,9 +1059,15 @@ async def successful_recom1(call: types.CallbackQuery):
     connection = sqlite3.connect(mafia_path, check_same_thread=False)
     cursor = connection.cursor()
     cursor.execute(f'UPDATE night_{game} SET doctor = ? WHERE user = ?', (1, id))
+    # mark doctor acted
+    try:
+        _mark_night_done(cursor, game, call.from_user.id)
+    except Exception:
+        pass
     connection.commit()
     name = cursor.execute('SELECT player_name FROM players WHERE game = ? AND player_id = ?', (game, id)).fetchall()[0][0]
     await call.message.edit_text(f"Ты выбрал {name}, он не умрет")
+    await _maybe_finish_night(call.message, game)
 
     
 @dp.callback_query_handler(Text(startswith='check_', ignore_case=True))
@@ -893,11 +1079,19 @@ async def successful_recom1(call: types.CallbackQuery):
     name = cursor.execute('SELECT player_name FROM players WHERE game = ? AND player_id = ?', (game, id)).fetchall()[0][0]
     username = cursor.execute('SELECT player_username FROM players WHERE game = ? AND player_id = ?', (game, id)).fetchall()[0][0]
     card = cursor.execute('SELECT player_card FROM players WHERE game = ? AND player_id = ?', (game, id)).fetchall()[0][0]
+    # mark police acted (even if result differs)
+    try:
+        _mark_night_done(cursor, game, call.from_user.id)
+        connection.commit()
+    except Exception:
+        pass
     if card != 'mafia' and card != 'don_mafia':
         await call.message.edit_text(f'Игрок <a href="https://t.me/{username}">{name}</a> не является мафией(любая другая роль)',parse_mode='html', disable_web_page_preview=True)
+        await _maybe_finish_night(call.message, game)
         return
     else:
         await call.message.edit_text(f'Игрок <a href="https://t.me/{username}">{name}</a> находится в рядах мафиози', parse_mode='html', disable_web_page_preview=True)
+        await _maybe_finish_night(call.message, game)
         return
 
 @dp.callback_query_handler(Text(startswith='maf_', ignore_case=True))
@@ -915,6 +1109,13 @@ async def successful_recom1(call: types.CallbackQuery):
         return
     await bot.send_message(chat_id=don_mafia, text=f'Одна из мафий предлагает убить <a href="https://t.me/{username}">{name}</a>', parse_mode='html', disable_web_page_preview=True)
     await call.message.edit_text(text='Дон мафия получил ваше предложение')
+    # mark mafia member acted
+    try:
+        _mark_night_done(cursor, game, call.from_user.id)
+        connection.commit()
+    except Exception:
+        pass
+    await _maybe_finish_night(call.message, game)
 
 
 @dp.callback_query_handler(Text(startswith='don_', ignore_case=True))
@@ -924,9 +1125,15 @@ async def successful_recom1(call: types.CallbackQuery):
     connection = sqlite3.connect(mafia_path, check_same_thread=False)
     cursor = connection.cursor()
     cursor.execute(f'UPDATE night_{game} SET mafia = 1 WHERE user = ?', (id,))
+    # mark don acted
+    try:
+        _mark_night_done(cursor, game, call.from_user.id)
+    except Exception:
+        pass
     connection.commit()
     name = cursor.execute('SELECT player_name FROM players WHERE game = ? AND player_id = ?', (game, id)).fetchall()[0][0]
     await call.message.edit_text(f"Ты выбрал убить {name}")
+    await _maybe_finish_night(call.message, game)
 
 
 @dp.callback_query_handler(Text(startswith='man_', ignore_case=True))
@@ -936,9 +1143,15 @@ async def successful_recom1(call: types.CallbackQuery):
     connection = sqlite3.connect(mafia_path, check_same_thread=False)
     cursor = connection.cursor()
     cursor.execute(f'UPDATE night_{game} SET maniak = 1 WHERE user = ?', (id,))
+    # mark maniak acted
+    try:
+        _mark_night_done(cursor, game, call.from_user.id)
+    except Exception:
+        pass
     connection.commit()
     name = cursor.execute('SELECT player_name FROM players WHERE game = ? AND player_id = ?', (game, id)).fetchall()[0][0]
     await call.message.edit_text(f"Ты выбрал убить {name}")
+    await _maybe_finish_night(call.message, game)
     
 
 async def start(message):
