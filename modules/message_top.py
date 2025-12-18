@@ -5,6 +5,7 @@ import sqlite3
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from typing import Optional
 
+
 from aiogram import types
 from aiogram.dispatcher.filters import Text
 from aiogram.types import ContentType

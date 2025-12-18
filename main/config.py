@@ -81,7 +81,7 @@ sost_2 = -int(cursor.execute(f"SELECT chat_id FROM chat_ids WHERE chat_name = ?"
 klan = -int(cursor.execute(f"SELECT chat_id FROM chat_ids WHERE chat_name = ?", ('klan',)).fetchall()[0][0])
 
 
-chats = [logs_gr, sost_1, sost_2, klan]
+chats = [logs_gr, sost_1, sost_2, klan, -1003012971064]
 # print(chats)
 #для работы постинга
 first_monday = "Доброе утром замы! \n Сегодня первая неделя цикла, а значит у Нейма(@prostiname) 3 проверки на недели"
