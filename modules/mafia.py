@@ -8,6 +8,7 @@ from aiogram.types import ChatPermissions, ParseMode
 from aiogram import executor, Bot, Dispatcher, types
 from aiogram.dispatcher.filters import Text
 import random
+import asyncio
 #from config import *
 import sqlite3
 from aiogram.utils.exceptions import *
@@ -24,7 +25,7 @@ mafia_path = curent_path / 'databases' / 'mafia.db'
 
 
 
-QUANTITY_OF_ROLES = {4: '2 1 0 0 1 0', 5: '0 1 2 1 1 0', 
+QUANTITY_OF_ROLES = {4: '0 1 1 0 1 1', 5: '0 1 2 1 1 0', 
                      6: '3 1 0 1 1 0', 7: '4 1 0 1 1 0', 8: '4 1 1 1 1 0',
                      9: '4 1 1 1 1 1', 10: '4 1 2 1 1 1'}
 
@@ -240,6 +241,7 @@ async def give_roles(message: types.Message):
 async def start_game(message, game):
     await start_night(message, game)
 
+
 async def start_night(message,game):
     connection = sqlite3.connect(mafia_path, check_same_thread=False)
     cursor = connection.cursor()
@@ -268,15 +270,19 @@ async def start_night(message,game):
         mafia.append(maf[0])
     
 
-    # if mafia == []:
+    # if mafia == []
     #     # TODO: стоп игра 
     #     return
     if doctor:
         await doctor_funk(message, game, doctor)
     if police:
         await police_funk(message, game, police)
+    if don_mafia:
+        await don_mafia_funk(message, game, don_mafia)
     for id in mafia:
-        await mafia_funk(message,game, id)
+        await mafia_funk(message,game, id, don_mafia)
+    if maniak:
+        await maniak_funk(message, game, maniak)
 
 async def doctor_funk(message, game, doctor):
     connection = sqlite3.connect(mafia_path, check_same_thread=False)
@@ -286,6 +292,8 @@ async def doctor_funk(message, game, doctor):
     count = 0
     keyboard = types.InlineKeyboardMarkup(row_width=1)
     for player in players:
+        if player[0] == doctor:
+            continue
         name = cursor.execute('SELECT player_name FROM players WHERE game = ? AND player_id = ?', (game, player[0])).fetchall()[0][0]
         players_id.append(player[0])
         btn = types.InlineKeyboardButton(text=name, callback_data=f'lek_{player[0]}in{game}')
@@ -304,6 +312,8 @@ async def police_funk(message, game, police):
     count = 0
     keyboard = types.InlineKeyboardMarkup(row_width=1)
     for player in players:
+        if player[0] == police:
+            continue
         name = cursor.execute('SELECT player_name FROM players WHERE game = ? AND player_id = ?', (game, player[0])).fetchall()[0][0]
         players_id.append(player[0])
         btn = types.InlineKeyboardButton(text=name, callback_data=f'check_{player[0]}in{game}')
@@ -312,7 +322,21 @@ async def police_funk(message, game, police):
     await bot.send_message(chat_id=police, text='Кого ты хочешь проверить?', reply_markup=keyboard)
 
 
-async def mafia_funk(message, game, mafia):
+async def don_mafia_funk(message, game, don_mafia):
+    connection = sqlite3.connect(mafia_path, check_same_thread=False)
+    cursor = connection.cursor()
+    players = cursor.execute(f'SELECT player FROM game_{game} WHERE liveness = ?', ('True', )).fetchall()
+    keyboard = types.InlineKeyboardMarkup(row_width=1)
+    for player in players:
+        if player[0] == don_mafia:
+            continue
+        name = cursor.execute('SELECT player_name FROM players WHERE game = ? AND player_id = ?', (game, player[0])).fetchall()[0][0]
+        btn = types.InlineKeyboardButton(text=name, callback_data=f'don_{player[0]}in{game}')
+        keyboard.add(btn)
+    await bot.send_message(chat_id=don_mafia, text='Кого ты хочешь убить?', reply_markup=keyboard)
+
+
+async def mafia_funk(message, game, mafia, don_mafia):
     connection = sqlite3.connect(mafia_path, check_same_thread=False)
     cursor = connection.cursor()
     players = cursor.execute(f'SELECT player FROM game_{game} WHERE liveness = ?', ('True', )).fetchall()
@@ -320,6 +344,8 @@ async def mafia_funk(message, game, mafia):
     count = 0
     keyboard = types.InlineKeyboardMarkup(row_width=1)
     for player in players:
+        if player[0] == mafia or player[0] == don_mafia:
+            continue
         name = cursor.execute('SELECT player_name FROM players WHERE game = ? AND player_id = ?', (game, player[0])).fetchall()[0][0]
         players_id.append(player[0])
         btn = types.InlineKeyboardButton(text=name, callback_data=f'maf_{player[0]}in{game}')
@@ -327,6 +353,148 @@ async def mafia_funk(message, game, mafia):
         count +=1
     await bot.send_message(chat_id=mafia, text='Кого ты хочешь предложить дону?', reply_markup=keyboard)
 
+
+async def maniak_funk(message, game, maniak):
+    connection = sqlite3.connect(mafia_path, check_same_thread=False)
+    cursor = connection.cursor()
+    players = cursor.execute(f'SELECT player FROM game_{game} WHERE liveness = ?', ('True', )).fetchall()
+    keyboard = types.InlineKeyboardMarkup(row_width=1)
+    for player in players:
+        if player[0] == maniak:
+            continue
+        name = cursor.execute('SELECT player_name FROM players WHERE game = ? AND player_id = ?', (game, player[0])).fetchall()[0][0]
+        btn = types.InlineKeyboardButton(text=name, callback_data=f'man_{player[0]}in{game}')
+        keyboard.add(btn)
+    await bot.send_message(chat_id=maniak, text='Кого ты хочешь убить?', reply_markup=keyboard)
+
+
+async def end_night(message, game):
+    connection = sqlite3.connect(mafia_path, check_same_thread=False)
+    cursor = connection.cursor()
+    
+    # Получаем всех игроков и их статусы ночи
+    night_data = cursor.execute(f'SELECT user, doctor, mafia, maniak FROM night_{game}').fetchall()
+    
+    dead_players = []
+    saved_players = []
+    
+    for player_data in night_data:
+        user_id, doctor, mafia, maniak = player_data
+        
+        # Если игрока лечил доктор - он 100% жив
+        if doctor == 1:
+            name = cursor.execute('SELECT player_name FROM players WHERE game = ? AND player_id = ?', (game, user_id)).fetchall()[0][0]
+            saved_players.append(name)
+            continue
+            
+        # Если игрока убивали мафия или маньяк - он мертв
+        if mafia == 1 or maniak == 1:
+            name = cursor.execute('SELECT player_name FROM players WHERE game = ? AND player_id = ?', (game, user_id)).fetchall()[0][0]
+            dead_players.append(name)
+            # Обновляем статус жизни игрока
+            cursor.execute(f'UPDATE game_{game} SET liveness = ? WHERE player = ?', ('False', user_id))
+    
+    connection.commit()
+    
+    # Формируем сообщение о результатах ночи
+    result_text = "🌅 Наступило утро!\n\n"
+    
+    if dead_players:
+        result_text += f"💀 Этой ночью погибли: {', '.join(dead_players)}\n"
+    else:
+        result_text += "✅ Этой ночью никто не погиб\n"
+        
+    if saved_players:
+        result_text += f"🏥 Доктор спас: {', '.join(saved_players)}\n"
+    
+    await message.answer(result_text)
+
+    # Проверяем конец игры (и, если нужно, завершаем)
+    if await check_game_end(message, game):
+        return
+
+    # Готовим таблицу ночи для следующего раунда (пересоздаём список живых)
+    cursor.execute(f'DELETE FROM night_{game}')
+    alive_players = cursor.execute(f"SELECT player FROM game_{game} WHERE liveness = ?", ('True',)).fetchall()
+    for (player_id,) in alive_players:
+        cursor.execute(
+            f'INSERT INTO night_{game} (user, doctor, mafia, maniak) VALUES (?, ?, ?, ?)',
+            (player_id, 0, 0, 0),
+        )   
+    connection.commit()
+
+    # Запускаем новую ночь с живыми игроками
+    await start_night(message, game)
+
+
+async def check_game_end(message, game) -> bool:
+    """
+    True  -> игра завершена (победитель объявлен, данные по игре очищены)
+    False -> игра продолжается
+
+    Условия:
+    - Если все мафия + дон мафия мертвы -> победа мирных.
+    - Если все мирные (все роли кроме мафии/дона) мертвы -> победа мафии.
+    """
+    connection = sqlite3.connect(mafia_path, check_same_thread=False)
+    cursor = connection.cursor()
+
+    mafia_alive = cursor.execute(
+        f"SELECT COUNT(*) FROM game_{game} "
+        f"WHERE liveness = ? AND player_card IN ('mafia', 'don_mafia')",
+        ('True',),
+    ).fetchall()[0][0]
+
+    peaceful_alive = cursor.execute(
+        f"SELECT COUNT(*) FROM game_{game} "
+        f"WHERE liveness = ? AND player_card NOT IN ('mafia', 'don_mafia')",
+        ('True',),
+    ).fetchall()[0][0]
+
+    if mafia_alive == 0 and peaceful_alive == 0:
+        await end_game(message, game, winner="draw")
+        return True
+
+    if mafia_alive == 0:
+        await end_game(message, game, winner="peaceful")
+        return True
+
+    if peaceful_alive == 0:
+        await end_game(message, game, winner="mafia")
+        return True
+
+    return False
+
+
+async def end_game(message, game, winner: str):
+    connection = sqlite3.connect(mafia_path, check_same_thread=False)
+    cursor = connection.cursor()
+
+    # Пытаемся получить chat_id из таблицы messages (на случай, если message не из нужного чата)
+    try:
+        chat_id = cursor.execute('SELECT chat_id FROM messages WHERE game = ?', (game,)).fetchall()[0][0]
+    except IndexError:
+        chat_id = message.chat.id
+
+    if winner == "peaceful":
+        text = "🏆 Игра окончена!\n\nПобеда мирных: вся мафия устранена."
+    elif winner == "mafia":
+        text = "💀 Игра окончена!\n\nПобеда мафии: все мирные устранены."
+    else:
+        text = "🤝 Игра окончена!\n\nНичья: в живых не осталось игроков."
+
+    try:
+        await bot.send_message(chat_id, text)
+    except Exception:
+        # если не получилось — хотя бы не падаем
+        await message.answer(text)
+
+    # Чистим данные игры, чтобы можно было создать новую в этом чате
+    cursor.execute(f'DROP TABLE IF EXISTS night_{game}')
+    cursor.execute(f'DROP TABLE IF EXISTS game_{game}')
+    cursor.execute('DELETE FROM players WHERE game = ?', (game,))
+    cursor.execute('DELETE FROM messages WHERE game = ?', (game,))
+    connection.commit()
 
 
 @dp.callback_query_handler(Text(startswith='lek_', ignore_case=True))
@@ -372,7 +540,30 @@ async def successful_recom1(call: types.CallbackQuery):
         return
     await bot.send_message(chat_id=don_mafia, text=f'Одна из мафий предлагает убить <a href="https://t.me/{username}">{name}</a>', parse_mode='html', disable_web_page_preview=True)
     await call.message.edit_text(text='Дон мафия получил ваше предложение')
-    
+
+
+@dp.callback_query_handler(Text(startswith='don_', ignore_case=True))
+async def successful_recom1(call: types.CallbackQuery):
+    id = int((call.data.split('don_')[1]).split('in')[0])
+    game = (call.data.split('in')[1]).split()[0]
+    connection = sqlite3.connect(mafia_path, check_same_thread=False)
+    cursor = connection.cursor()
+    cursor.execute(f'UPDATE night_{game} SET mafia = 1 WHERE user = ?', (id,))
+    connection.commit()
+    name = cursor.execute('SELECT player_name FROM players WHERE game = ? AND player_id = ?', (game, id)).fetchall()[0][0]
+    await call.message.edit_text(f"Ты выбрал убить {name}")
+
+
+@dp.callback_query_handler(Text(startswith='man_', ignore_case=True))
+async def successful_recom1(call: types.CallbackQuery):
+    id = int((call.data.split('man_')[1]).split('in')[0])
+    game = (call.data.split('in')[1]).split()[0]
+    connection = sqlite3.connect(mafia_path, check_same_thread=False)
+    cursor = connection.cursor()
+    cursor.execute(f'UPDATE night_{game} SET maniak = 1 WHERE user = ?', (id,))
+    connection.commit()
+    name = cursor.execute('SELECT player_name FROM players WHERE game = ? AND player_id = ?', (game, id)).fetchall()[0][0]
+    await call.message.edit_text(f"Ты выбрал убить {name}")
     
 
 async def start(message):
@@ -411,8 +602,24 @@ async def successful_recom1(call: types.CallbackQuery):
 
 @dp.message_handler(commands=["test"], commands_prefix=["!", '.', '/'])
 async def get_ref(message: types.Message):
-    pass
+    connection = sqlite3.connect(mafia_path, check_same_thread=False)
+    cursor = connection.cursor()
+    if message.from_user.id != 1240656726:
+        await message.answer('нет иди нахуй')
+        return
+    try:
+        cursor.execute('SELECT game FROM messages WHERE chat_id = ?', (message.chat.id,))
+        game = cursor.fetchall()[0][0]
+        await end_night(message, game)
+    except IndexError:
+        await message.answer('В этом чате нет активных игр')
     
 
 if __name__ == "__main__":
     executor.start_polling(dp)
+
+
+
+
+
+    
