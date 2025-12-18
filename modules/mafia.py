@@ -613,6 +613,9 @@ async def get_ref(message: types.Message):
         await end_night(message, game)
     except IndexError:
         await message.answer('В этом чате нет активных игр')
+
+
+  
     
 
 if __name__ == "__main__":
