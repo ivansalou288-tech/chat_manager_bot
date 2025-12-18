@@ -2903,8 +2903,11 @@ async def vagn_abavlenie(message):
         return
     if message.from_user.id != 1240656726:
         return
-    link = await bot.export_chat_invite_link(chat_id=klan)
-    await message.answer(link)
+    try:
+        link = await bot.export_chat_invite_link(chat_id=klan)
+        await message.answer(link)
+    except aiogram.utils.exceptions.BadRequest:
+        await message.answer('Нет прав')
 
 @dp.message_handler(Text(startswith=['! ссылка состав 1'], ignore_case=True), content_types=ContentType.TEXT,is_forwarded=False)
 async def vagn_abavlenie(message):
@@ -2912,8 +2915,11 @@ async def vagn_abavlenie(message):
         return
     if message.from_user.id != 1240656726:
         return
-    link = await bot.export_chat_invite_link(chat_id=sost_1)
-    await message.answer(link)
+    try:
+        link = await bot.export_chat_invite_link(chat_id=sost_1)
+        await message.answer(link)
+    except aiogram.utils.exceptions.BadRequest:
+        await message.answer('Нет прав')
 
 @dp.message_handler(Text(startswith=['! ссылка состав 2'], ignore_case=True), content_types=ContentType.TEXT,is_forwarded=False)
 async def vagn_abavlenie(message):
@@ -2921,9 +2927,21 @@ async def vagn_abavlenie(message):
         return
     if message.from_user.id != 1240656726:
         return
-    link = await bot.export_chat_invite_link(chat_id=sost_2)
-    await message.answer(link)
+    try:
+        link = await bot.export_chat_invite_link(chat_id=sost_2)
+        await message.answer(link)
+    except aiogram.utils.exceptions.BadRequest:
+        await message.answer('Нет прав')
 
+@dp.message_handler(Text(startswith=['! очс'], ignore_case=True), content_types=ContentType.TEXT,is_forwarded=False)
+async def dell_st(message):
+    if message.from_user.id != 1240656726:
+        return
+    connection = sqlite3.connect(main_path)
+    cursor = connection.cursor()
+    cursor.execute("DELETE FROM states")
+    connection.commit()
+    await message.answer('Очищено')
 
 
 @dp.message_handler()
@@ -2976,7 +2994,7 @@ async def shedul_posting(message):
         if now_time == "00:00:00":
             connection = sqlite3.connect(main_path)
             cursor = connection.cursor()
-            cursor.execute("DELETE * FROM states")
+            cursor.execute("DELETE FROM states")
             connection.commit()
             global week_count
             if datetime.today().weekday() == 1:

@@ -42,11 +42,11 @@ ROLES_ABOUT = {
     "maniak": "🔪 Маньяк - Нейтральная убийственная роль. Каждую ночь убивает игрока. Цель — остаться последним выжившим."
 }
 
-token="8451829699:AAE_tfApKWq3r82i0U7yD98RCcQPIMmMT1Q"
-api_id =21842840
-api_hash ="1db0b6e807c90e6364287ad8af7fa655"
-bot = Bot(token=token)
-dp = Dispatcher(bot)
+# token="8451829699:AAE_tfApKWq3r82i0U7yD98RCcQPIMmMT1Q"
+# api_id =21842840
+# api_hash ="1db0b6e807c90e6364287ad8af7fa655"
+# bot = Bot(token=token)
+# dp = Dispatcher(bot)
 
 class Person:
     def __init__(self, user_id, card):
@@ -556,7 +556,7 @@ async def between_nights_vote_and_kill(message: types.Message, game: str) -> boo
 
 @dp.message_handler(commands=["мафия", " мафия"], commands_prefix=["!", '.', '/'])
 async def get_ref(message: types.Message):
-    if message.from_user.id == message.from_user.id and message.from_user.id != 1240656726:
+    if message.from_user.id == message.from_user.id:
         await message.answer("В разработке")
         return
     
@@ -1203,8 +1203,8 @@ async def get_ref(message: types.Message):
         await message.answer('В этом чате нет активных игр')
     
 
-if __name__ == "__main__":
-    executor.start_polling(dp)
+# if __name__ == "__main__":
+#     executor.start_polling(dp)
 
 
 
