@@ -9,6 +9,8 @@ from aiogram import executor, Bot, Dispatcher, types
 from aiogram.dispatcher.filters import Text
 import random
 import asyncio
+import time
+import re
 #from config import *
 import sqlite3
 from aiogram.utils.exceptions import *
@@ -50,6 +52,374 @@ class Person:
     def __init__(self, user_id, card):
         self.user_id = user_id
         self.card = card
+
+
+# -------------------------
+# Between-nights voting flow
+# -------------------------
+_VOTE_EVENTS = {}  # game -> asyncio.Event
+
+
+def _safe_game_id(game: str) -> str:
+    # game comes from generated start-code; still keep it safe for dynamic table names
+    if not isinstance(game, str) or not re.fullmatch(r"[A-Za-z0-9_]+", game):
+        raise ValueError("Invalid game id")
+    return game
+
+
+def _ensure_vote_tables(cursor, game: str):
+    game = _safe_game_id(game)
+    cursor.execute(
+        f"""
+        CREATE TABLE IF NOT EXISTS votes_{game} (
+            round INTEGER NOT NULL,
+            voter INTEGER NOT NULL,
+            target INTEGER NOT NULL,
+            created_at INTEGER NOT NULL,
+            PRIMARY KEY (round, voter)
+        )
+        """
+    )
+    cursor.execute(
+        """
+        CREATE TABLE IF NOT EXISTS vote_state (
+            game TEXT PRIMARY KEY,
+            round INTEGER NOT NULL,
+            chat_id INTEGER NOT NULL,
+            message_id INTEGER,
+            candidates TEXT NOT NULL,
+            status TEXT NOT NULL
+        )
+        """
+    )
+
+
+def _candidates_to_text(candidates):
+    # store as comma-separated ints
+    return ",".join(str(int(x)) for x in candidates)
+
+
+def _text_to_candidates(text: str):
+    if not text:
+        return []
+    out = []
+    for part in text.split(","):
+        part = part.strip()
+        if not part:
+            continue
+        out.append(int(part))
+    return out
+
+
+async def _get_alive_players(cursor, game: str):
+    game = _safe_game_id(game)
+    rows = cursor.execute(
+        f"SELECT player FROM game_{game} WHERE liveness = ?",
+        ("True",),
+    ).fetchall()
+    return [r[0] for r in rows]
+
+
+async def _get_player_name(cursor, game: str, player_id: int) -> str:
+    row = cursor.execute(
+        "SELECT player_name FROM players WHERE game = ? AND player_id = ?",
+        (game, player_id),
+    ).fetchall()
+    return row[0][0] if row else str(player_id)
+
+
+async def _start_vote_round(chat_id: int, game: str, round_no: int, candidates):
+    """
+    Posts a single vote message in the group chat with inline buttons for candidates.
+    Votes are collected via callback handler dv_...
+    """
+    connection = sqlite3.connect(mafia_path, check_same_thread=False)
+    cursor = connection.cursor()
+    _ensure_vote_tables(cursor, game)
+
+    candidates = [int(x) for x in candidates]
+    candidates_text = _candidates_to_text(candidates)
+
+    # Clear any stale votes for this round (if the bot restarts mid-game)
+    cursor.execute(f"DELETE FROM votes_{game} WHERE round = ?", (round_no,))
+    connection.commit()
+
+    # Save state (message_id will be updated after send)
+    cursor.execute(
+        """
+        INSERT INTO vote_state (game, round, chat_id, message_id, candidates, status)
+        VALUES (?, ?, ?, ?, ?, ?)
+        ON CONFLICT(game) DO UPDATE SET
+            round=excluded.round,
+            chat_id=excluded.chat_id,
+            message_id=excluded.message_id,
+            candidates=excluded.candidates,
+            status=excluded.status
+        """,
+        (game, round_no, chat_id, None, candidates_text, "open"),
+    )
+    connection.commit()
+
+    keyboard = types.InlineKeyboardMarkup(row_width=2)
+    for pid in candidates:
+        name = await _get_player_name(cursor, game, pid)
+        keyboard.insert(
+            types.InlineKeyboardButton(
+                text=name,
+                callback_data=f"dv_{round_no}_{pid}in{game}",
+            )
+        )
+
+    alive = await _get_alive_players(cursor, game)
+    if round_no == 1:
+        text = (
+            "🗳 Голосование между ночами!\n\n"
+            "Каждый живой игрок должен выбрать, кого исключить.\n"
+            f"Проголосовало: 0/{len(alive)}"
+        )
+    else:
+        text = (
+            "🗳 Переголосование!\n\n"
+            "Равенство голосов. Голосуем только среди кандидатов ниже.\n"
+            f"Проголосовало: 0/{len(alive)}"
+        )
+
+    sent = await bot.send_message(chat_id, text, reply_markup=keyboard)
+    cursor.execute(
+        "UPDATE vote_state SET message_id = ? WHERE game = ?",
+        (sent.message_id, game),
+    )
+    connection.commit()
+
+    # prepare event for this round
+    ev = _VOTE_EVENTS.get(game)
+    if ev is None or ev.is_set():
+        ev = asyncio.Event()
+        _VOTE_EVENTS[game] = ev
+    else:
+        ev.clear()
+
+    return sent.message_id
+
+
+@dp.callback_query_handler(Text(startswith='dv_', ignore_case=True))
+async def between_nights_vote_callback(call: types.CallbackQuery):
+    """
+    Callback format: dv_{round}_{target}in{game}
+    Stores vote in votes_{game} and signals the waiting coroutine when all alive voted.
+    """
+    try:
+        payload = call.data.split("dv_")[1]
+        round_str = payload.split("_")[0]
+        rest = payload.split("_", 1)[1]
+        target_str = rest.split("in")[0]
+        game = rest.split("in")[1].split()[0]
+        round_no = int(round_str)
+        target_id = int(target_str)
+        game = _safe_game_id(game)
+    except Exception:
+        await call.answer("Ошибка голоса", show_alert=False)
+        return
+
+    voter_id = call.from_user.id
+
+    connection = sqlite3.connect(mafia_path, check_same_thread=False)
+    cursor = connection.cursor()
+    _ensure_vote_tables(cursor, game)
+    connection.commit()
+
+    # Check state is open and round matches
+    state_rows = cursor.execute(
+        "SELECT round, chat_id, message_id, candidates, status FROM vote_state WHERE game = ?",
+        (game,),
+    ).fetchall()
+    if not state_rows:
+        await call.answer("Голосование не активно", show_alert=False)
+        return
+
+    active_round, chat_id, message_id, candidates_text, status = state_rows[0]
+    candidates = _text_to_candidates(candidates_text)
+
+    if status != "open" or int(active_round) != int(round_no):
+        await call.answer("Этот раунд уже закрыт", show_alert=False)
+        return
+
+    # only in correct chat message
+    if call.message and (call.message.chat.id != int(chat_id) or call.message.message_id != int(message_id)):
+        await call.answer("Неактуальное сообщение", show_alert=False)
+        return
+
+    # voter must be alive
+    alive_check = cursor.execute(
+        f"SELECT liveness FROM game_{game} WHERE player = ?",
+        (voter_id,),
+    ).fetchall()
+    if not alive_check or alive_check[0][0] != "True":
+        await call.answer("Ты не можешь голосовать", show_alert=True)
+        return
+
+    # target must be allowed and alive
+    if int(target_id) not in set(candidates):
+        await call.answer("Нельзя голосовать за этого игрока", show_alert=True)
+        return
+
+    target_alive = cursor.execute(
+        f"SELECT liveness FROM game_{game} WHERE player = ?",
+        (int(target_id),),
+    ).fetchall()
+    if not target_alive or target_alive[0][0] != "True":
+        await call.answer("Этот игрок уже выбыл", show_alert=True)
+        return
+
+    # Upsert vote (one vote per alive voter per round)
+    now_ts = int(time.time())
+    cursor.execute(
+        f"""
+        INSERT INTO votes_{game} (round, voter, target, created_at)
+        VALUES (?, ?, ?, ?)
+        ON CONFLICT(round, voter) DO UPDATE SET
+            target=excluded.target,
+            created_at=excluded.created_at
+        """,
+        (round_no, voter_id, int(target_id), now_ts),
+    )
+    connection.commit()
+
+    # Update progress in the vote message
+    alive_players = await _get_alive_players(cursor, game)
+    voted_count = cursor.execute(
+        f"SELECT COUNT(*) FROM votes_{game} WHERE round = ?",
+        (round_no,),
+    ).fetchall()[0][0]
+
+    try:
+        if round_no == 1:
+            new_text = (
+                "🗳 Голосование между ночами!\n\n"
+                "Каждый живой игрок должен выбрать, кого исключить.\n"
+                f"Проголосовало: {voted_count}/{len(alive_players)}"
+            )
+        else:
+            new_text = (
+                "🗳 Переголосование!\n\n"
+                "Равенство голосов. Голосуем только среди кандидатов ниже.\n"
+                f"Проголосовало: {voted_count}/{len(alive_players)}"
+            )
+        await call.message.edit_text(new_text, reply_markup=call.message.reply_markup)
+    except Exception:
+        pass
+
+    await call.answer("Голос учтён", show_alert=False)
+
+    # Finish round when all alive voted
+    if voted_count >= len(alive_players):
+        cursor.execute("UPDATE vote_state SET status = ? WHERE game = ?", ("closed", game))
+        connection.commit()
+        ev = _VOTE_EVENTS.get(game)
+        if ev is None:
+            ev = asyncio.Event()
+            _VOTE_EVENTS[game] = ev
+        ev.set()
+
+
+def _tally_votes(votes_rows, allowed_targets):
+    allowed_set = set(int(x) for x in allowed_targets)
+    tally = {int(x): 0 for x in allowed_set}
+    for (_round, _voter, target, _created_at) in votes_rows:
+        target = int(target)
+        if target in allowed_set:
+            tally[target] = tally.get(target, 0) + 1
+    return tally
+
+
+async def _finalize_vote_round(cursor, game: str, round_no: int, candidates):
+    """
+    Returns (winner_id, leaders_list, tally_dict)
+    winner_id is non-None only if a single leader exists.
+    """
+    game = _safe_game_id(game)
+    votes = cursor.execute(
+        f"SELECT round, voter, target, created_at FROM votes_{game} WHERE round = ?",
+        (round_no,),
+    ).fetchall()
+    tally = _tally_votes(votes, candidates)
+    if not tally:
+        return None, [], {}
+    max_votes = max(tally.values())
+    leaders = [pid for pid, cnt in tally.items() if cnt == max_votes]
+    if len(leaders) == 1:
+        return leaders[0], leaders, tally
+    return None, leaders, tally
+
+
+async def between_nights_vote_and_kill(message: types.Message, game: str) -> bool:
+    """
+    Runs the between-nights voting in the group chat.
+    - Round 1: vote among all alive players
+    - If tie for first place: revote among tied players only
+    - If still tie: pick random among tied
+
+    Returns True if game ended after vote-kill, else False.
+    """
+    game = _safe_game_id(game)
+    connection = sqlite3.connect(mafia_path, check_same_thread=False)
+    cursor = connection.cursor()
+    _ensure_vote_tables(cursor, game)
+    connection.commit()
+
+    # Find chat_id reliably
+    try:
+        chat_id = cursor.execute("SELECT chat_id FROM messages WHERE game = ?", (game,)).fetchall()[0][0]
+    except Exception:
+        chat_id = message.chat.id
+
+    alive = await _get_alive_players(cursor, game)
+    if len(alive) < 2:
+        return await check_game_end(message, game)
+
+    # Round 1
+    round_no = 1
+    await _start_vote_round(chat_id, game, round_no, alive)
+
+    ev = _VOTE_EVENTS.get(game)
+    try:
+        await asyncio.wait_for(ev.wait(), timeout=300)  # 5 minutes
+    except asyncio.TimeoutError:
+        # proceed with what we have
+        pass
+
+    winner, leaders, _tally = await _finalize_vote_round(cursor, game, round_no, alive)
+
+    # Tie -> revote among leaders only
+    if winner is None and len(leaders) >= 2:
+        round_no = 2
+        await _start_vote_round(chat_id, game, round_no, leaders)
+        ev = _VOTE_EVENTS.get(game)
+        try:
+            await asyncio.wait_for(ev.wait(), timeout=180)  # 3 minutes
+        except asyncio.TimeoutError:
+            pass
+
+        winner2, leaders2, _tally2 = await _finalize_vote_round(cursor, game, round_no, leaders)
+        if winner2 is None and len(leaders2) >= 2:
+            winner = random.choice(leaders2)
+        else:
+            winner = winner2 if winner2 is not None else random.choice(leaders)
+
+    if winner is None:
+        winner = random.choice(alive)
+
+    # Kill voted player
+    cursor.execute(f"UPDATE game_{game} SET liveness = ? WHERE player = ?", ("False", int(winner)))
+    connection.commit()
+
+    dead_name = await _get_player_name(cursor, game, int(winner))
+    await bot.send_message(chat_id, f"⚖️ По итогам голосования исключён: {dead_name}")
+
+    # Check end after vote kill
+    if await check_game_end(message, game):
+        return True
+    return False
 
 
 @dp.message_handler(commands=["мафия", " мафия"], commands_prefix=["!", '.', '/'])
@@ -413,6 +783,11 @@ async def end_night(message, game):
     if await check_game_end(message, game):
         return
 
+    # Между ночами — голосование, затем снова ночь
+    ended = await between_nights_vote_and_kill(message, game)
+    if ended:
+        return
+
     # Готовим таблицу ночи для следующего раунда (пересоздаём список живых)
     cursor.execute(f'DELETE FROM night_{game}')
     alive_players = cursor.execute(f"SELECT player FROM game_{game} WHERE liveness = ?", ('True',)).fetchall()
@@ -420,7 +795,7 @@ async def end_night(message, game):
         cursor.execute(
             f'INSERT INTO night_{game} (user, doctor, mafia, maniak) VALUES (?, ?, ?, ?)',
             (player_id, 0, 0, 0),
-        )   
+        )
     connection.commit()
 
     # Запускаем новую ночь с живыми игроками
@@ -613,9 +988,7 @@ async def get_ref(message: types.Message):
         await end_night(message, game)
     except IndexError:
         await message.answer('В этом чате нет активных игр')
-
-
-  
+    
 
 if __name__ == "__main__":
     executor.start_polling(dp)
