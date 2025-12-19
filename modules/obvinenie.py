@@ -87,11 +87,21 @@ async def _pick_random_user_from_db(chat_id: int) -> tuple[int, str | None, str 
 
 
 @dp.message_handler(
-    Text(startswith=["обвинялка", "!обвинялка", "! обвинялка", ".обвинялка", "/обвинялка"], ignore_case=True),
+    Text(startswith=["обвинение", "!обвинение", "! обвинение", ".обвинение", "/обвинение"], ignore_case=True),
     content_types=ContentType.TEXT,
     is_forwarded=False,
 )
 async def obvinenie(message: types.Message):
+    connection = sqlite3.connect(main_path, check_same_thread=False)
+    cursor = connection.cursor()
+    black_list=[]
+    blk = cursor.execute('SELECT user_id FROM black_list').fetchall()
+    for i in blk:
+        black_list.append(i[0])
+
+    if message.from_user.id in black_list:
+        await message.answer('В доступе отказано, ты в черном списке')
+        return
     # Только групповые чаты
     if message.chat.id == message.from_user.id:
         await message.answer("📝Эта команда предназначена для использования в групповых чатах, а не в личных сообщениях!")
