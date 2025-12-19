@@ -20,6 +20,8 @@ from modules.obvinenie import *
 from modules.rus_rulet import *
 from modules.golden_rulet import *
 from modules.who_is_who import *
+from modules.hot_cold import register_hot_cold_handlers
+register_hot_cold_handlers(dp)
 
 #? EN: Handles the "successful_recom1" callback and saves a prepared recommendation from temp storage to the main table.
 #* RU: Обрабатывает колбэк «successful_recom1» и сохраняет подготовленную рекомендацию из временного хранилища в основную таблицу.
