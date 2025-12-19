@@ -17,7 +17,7 @@ async def start_hot_cold(message: types.Message):
     chat_targets[chat_id] = target_number
 
     await message.reply(
-        "Игра 'Горячо-Холодно' началась! Я загадал число от 1 до 100. Попробуйте угадать!"
+        "🎰 Игра <b>«Холодно-Горячо»</b> началась❗\n\n🔮 Я загадал число от 1 до 100.\n💬Попробуйте угадать", parse_mode='html'
     )
 
 async def guess_number(message: types.Message):
@@ -27,21 +27,21 @@ async def guess_number(message: types.Message):
     try:
         guess = int(message.text)
     except ValueError:
-        await message.reply("Пожалуйста, введите число.")
+        await message.reply("Пожалуйста, введите число")
         return
 
     target_number = chat_targets[chat_id]
     difference = abs(target_number - guess)
 
     if guess == target_number:
-        await message.reply("Поздравляю! Вы угадали число!")
+        await message.reply("🎉 Поздравляю❗️\n🔮 Вы угадали число")
         del chat_targets[chat_id]  # End the game for this chat
     elif difference <= 5:
-        await message.reply("Горячо!")
+        await message.reply("🔥 <b>Горячо</b>", parse_mode='html')
     elif difference <= 15:
-        await message.reply("Тепло.")
+        await message.reply("☀️<b>Тепло</b>", parse_mode='html')
     else:
-        await message.reply("Холодно.")
+        await message.reply("🧊<b>Холодно</b>", parse_mode='html')
 
 async def cancel_hot_cold(message: types.Message):
     """Cancel the Hot-Cold game for the chat."""
@@ -49,6 +49,6 @@ async def cancel_hot_cold(message: types.Message):
 
     if chat_id in chat_targets:
         del chat_targets[chat_id]
-        await message.reply("Игра 'Горячо-Холодно' завершена.")
+        await message.reply("🎰 Игра <b>«Холодно-Горячо»</b> завершена❗", parse_mode='html')
     else:
-        await message.reply("Игра не была начата.")
+        await message.reply("Игра не была начата")
