@@ -19,7 +19,6 @@ def register_hot_cold_handlers(dp: Dispatcher):
     dp.register_message_handler(cancel_hot_cold, commands=['стоп-хг'], commands_prefix='!/.')
 
 async def start_hot_cold(message: types.Message):
-                
     connection = sqlite3.connect(main_path, check_same_thread=False)
     cursor = connection.cursor()
     black_list=[]

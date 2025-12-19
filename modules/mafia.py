@@ -1216,22 +1216,11 @@ async def start(message):
 
     ]
 
-    commands = types.InlineKeyboardButton(text='⚒️ Команды', callback_data='commands')
+    commands = types.InlineKeyboardButton(text='⚒️ Команды', url='https://ivansalou288-tech.github.io/chat_manager_bot/')
     keyboard = types.InlineKeyboardMarkup(row_width=1)
     keyboard.add(*buttons).add(commands)
 
     await bot.send_photo(message.chat.id,photo=open(f'{curent_path}/photos/klan_ava.jpg', 'rb'), caption=f'Приветсвуем тебя в <b>WERTY | Чат-менеджер</b>\n\n{is_in_klan}\n\nЧто ты хочешь сделать?', parse_mode='html',reply_markup=keyboard)
-
-#? EN: Displays the list of available bot commands when the commands button is pressed.
-#* RU: Показывает список доступных команд бота при нажатии на кнопку команд.
-@dp.callback_query_handler(text="commands")
-async def successful_recom1(call: types.CallbackQuery):
-    connection = sqlite3.connect(main_path, check_same_thread=False)
-    cursor = connection.cursor()
-    text = cursor.execute('SELECT text FROM texts WHERE text_name = ?', ('commands',)).fetchall()[0][0]
-    await bot.send_message(call.from_user.id, f'🗓<b>Список команд чата:</b>\n\n{text}', parse_mode=ParseMode.HTML, disable_web_page_preview=True)
-    await bot.answer_callback_query(call.id, text='')
-
 
 #? EN: Terminates the game via 'stop' command and cleans up all related database tables.
 #* RU: Завершает игру по команде 'stop' и очищает все связанные таблицы базы данных.
