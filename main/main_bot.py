@@ -17,6 +17,8 @@ from modules.mafia import *
 from modules.cubes import *
 from modules.message_top import *
 from modules.obvinenie import *
+from modules.rus_rulet import *
+from modules.golden_rulet import *
 
 @dp.callback_query_handler(text="successful_recom1")
 async def successful_recom1(call: types.CallbackQuery):
