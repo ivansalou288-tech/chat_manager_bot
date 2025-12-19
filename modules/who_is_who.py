@@ -61,7 +61,7 @@ async def who_is_who(message: types.Message):
 			return
 
 		tg_id_int, display = random.choice(candidates)
-		reply_text = f'я думаю что юзер <a href="tg://user?id={tg_id_int}">{html.escape(display)}</a> {html.escape(descriptor)}'
+		reply_text = f'🔮 Я думаю что <a href="tg://user?id={tg_id_int}">{html.escape(display)}</a> {html.escape(descriptor)}'
 		await message.reply(reply_text, parse_mode='HTML', disable_web_page_preview=True)
 	finally:
 		try:
