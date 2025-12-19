@@ -2846,14 +2846,11 @@ async def id_user_check(message: types.Message):
         await message.answer('кыш')
         return
     text = cursor.execute('SELECT text FROM texts WHERE text_name = ?', ('commands',)).fetchall()[0][0]
-    try:
-        await bot.send_message(message.from_user.id, f'🗓<b>Список команд чата:</b>\n\n{text}', parse_mode=ParseMode.HTML,
-                           disable_web_page_preview=True)
-    except CantInitiateConversation:
-        await message.answer('🗓 Диалог с ботом не найден')
-        return
-    await message.answer('🗓Список команд отправлен в <a href="https://t.me/for_klan_tests_bot">лс</a>',
-                         parse_mode=ParseMode.HTML, disable_web_page_preview=True)
+    commands = types.InlineKeyboardButton(text='⚒️ Команды', url='https://ivansalou288-tech.github.io/chat_manager_bot/')
+    keyboard = types.InlineKeyboardMarkup(row_width=1)
+    keyboard.add(commands)
+    await message.answer('🗓Список команд ', parse_mode=ParseMode.HTML, disable_web_page_preview=True, reply_markup=keyboard)
+         
 
 
 #? EN: Allows quest admins to change the text of daily quests by number.
