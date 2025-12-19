@@ -1,6 +1,8 @@
 from admin_config import *
 
 print('start')
+#? EN: Handles /start command and shows admin bot main menu with available actions.
+#* RU: Обрабатывает команду /start и показывает главное меню админ-бота с доступными действиями.
 @dp.message_handler(commands="start")
 async def start(message: types.Message):
     print(message.from_user.id)
@@ -20,6 +22,8 @@ from new_link import *
 from admin.recommend import *
 from admin.admin_panel import *
 
+#? EN: Main entry point for the admin bot.
+#* RU: Главная точка входа для админ-бота.
 if __name__ == "__main__":
     executor.start_polling(dp)
 

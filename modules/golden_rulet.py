@@ -9,9 +9,11 @@ from aiogram import types
 from aiogram.dispatcher.filters import Text
 from aiogram.types import ContentType, ParseMode
 
-from main.config import dp, bot, chats, main_path
+from main.config import dp, bot, chats, main_path, mute_user
 
 
+#? EN: Chat command for playing Golden roulette: bets your farm coins, with a chance to lose the bet or double it.
+#* RU: Команда чата для игры в Золотую рулетку: ты ставишь коины с фармы с шансом проиграть ставку или удвоить её.
 @dp.message_handler(
     Text(
         startswith=[
@@ -27,6 +29,7 @@ from main.config import dp, bot, chats, main_path
     is_forwarded=False,
 )
 async def golden_roulette(message: types.Message):
+    MUTE_TIME = 5
     """
     Золотая рулетка:
     - работает по принципу русской рулетки (1 из 6 — поражение)
@@ -34,7 +37,16 @@ async def golden_roulette(message: types.Message):
     - при поражении ставка сгорает
     - при выживании игрок получает +100% к ставке (удваивает поставленную сумму)
     """
+    connection = sqlite3.connect(main_path, check_same_thread=False)
+    cursor = connection.cursor()
+    black_list=[]
+    blk = cursor.execute('SELECT user_id FROM black_list').fetchall()
+    for i in blk:
+        black_list.append(i[0])
 
+    if message.from_user.id in black_list:
+        await message.answer('В доступе отказано, ты в черном списке')
+        return
     # Только групповые чаты
     if message.chat.id == message.from_user.id:
         await message.answer(
@@ -100,7 +112,7 @@ async def golden_roulette(message: types.Message):
 
     # Русская рулетка: 1 из 6 — поражение
     is_dead = random.randint(1, 6) <= 3
-
+    
     if is_dead:
         # Проигрыш — ставка сгорает
         new_meshok = meshok - bet
@@ -119,6 +131,7 @@ async def golden_roulette(message: types.Message):
             f"❌ В барабане оказался патрон. Твоя ставка сгорела.\n\n"
             f"💼 В твоем мешке осталось: 🍊 <b>{new_meshok} eZ¢</b>"
         )
+        await mute_user(user_id, message.chat.id, MUTE_TIME, 'мин', message, '')
     else:
         # Выигрыш — ставка удваивается (прибавляем ставку к мешку)
         win_amount = bet

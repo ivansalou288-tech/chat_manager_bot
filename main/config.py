@@ -6,7 +6,7 @@ from aiogram.types import ChatPermissions
 from aiogram import executor, Bot, Dispatcher, types
 from aiogram.dispatcher.filters import Text
 import asyncio
-#from config import *
+#?from config import *
 import sqlite3
 from aiogram.utils.exceptions import *
 from main.utils import CopyTextButton
@@ -14,7 +14,8 @@ from path import Path
 import requests
 from googletrans import Translator
 
-#инициализация бота
+#? EN: Bot initialization
+#* RU: Инициализация бота
 token="8516733469:AAEk8KuRNWyURMaRQFeJJIyz95pK4kBIiwA"
 api_id =21842840
 api_hash ="1db0b6e807c90e6364287ad8af7fa655"
@@ -72,7 +73,8 @@ tur_path = curent_path / 'databases' / 'tournaments.db'
 dinamik_path = curent_path / 'databases' / 'din_data.db'
 
 
-#импорт айди рабочих чатов
+#? EN: Import working chat IDs from database
+#* RU: Импорт ID рабочих чатов из базы данных
 connection = sqlite3.connect(main_path, check_same_thread=False)
 cursor = connection.cursor()
 logs_gr = -int(cursor.execute(f"SELECT chat_id FROM chat_ids WHERE chat_name = ?", ('logs_gr',)).fetchall()[0][0])
@@ -83,7 +85,8 @@ klan = -int(cursor.execute(f"SELECT chat_id FROM chat_ids WHERE chat_name = ?", 
 
 chats = [logs_gr, sost_1, sost_2, klan, -1003012971064]
 # print(chats)
-#для работы постинга
+#? EN: For posting functionality
+#* RU: Для работы постинга
 first_monday = "Доброе утром замы! \n Сегодня первая неделя цикла, а значит у Нейма(@prostiname) 3 проверки на недели"
 second_monday = "Доброе утром замы! \n Сегодня вторая неделя цикла, а значит у Соника(@TurboSonicc) 3 проверки на недели"
 third_monday ="Доброе утром замы! \n Сегодня вторая неделя цикла, а значит у Ежика(@EzhikNaZAME) 3 проверки на недели"
@@ -96,21 +99,28 @@ sunday="Всем замам, Доброе утро! \nСегодня воскр�
 week_count = 1
 posting = False
 
-#кто может рекомендовать и снимать рекомендации
+#? EN: Who can recommend and remove recommendations
+#* RU: Кто может рекомендовать и снимать рекомендации
 can_recommend_users = [8015726709, 1401086794, 1240656726, 5714854312, 1803851598, 5740021109]
 can_snat_recommend_users = [8015726709, 1401086794, 1240656726]
 
-#для правильной активации автоанмута и квестов
+#? EN: For proper activation of auto-unmute and quests
+#* RU: Для правильной активации автоанмута и квестов
 is_auto_unmute = False
 is_quests = False
 
-#Для работы просмотра снятых предов
+#? EN: For viewing removed warnings functionality
+#* RU: Для работы просмотра снятых предов
 page = 0
 mes_id = 0
 itog = []
 page_c = 0
 
 
+#? EN: Class to extract user information from a message (reply, mention, or ID)
+#* RU: Класс для извлечения информации о пользователе из сообщения (ответ, упоминание или ID)
+#? EN: Class to extract user information from a message (reply, mention, or ID)
+#* RU: Класс для извлечения информации о пользователе из сообщения (ответ, упоминание или ID)
 class GetUserByMessage:
     def __init__(self, message):
         self.message = message
@@ -215,6 +225,10 @@ class GetUserByMessage:
             return 'Отсутвует'
 
 
+#? EN: Class to get user information by their Telegram ID
+#* RU: Класс для получения информации о пользователе по его Telegram ID
+#? EN: Class to get user information by their Telegram ID
+#* RU: Класс для получения информации о пользователе по его Telegram ID
 class GetUserByID:
     def __init__(self, user_id):
         self.user_id = user_id
@@ -285,6 +299,10 @@ class GetUserByID:
             return 'Отсутвует'
 
 
+#? EN: Retrieves and formats user recommendations from database
+#* RU: Получает и форматирует рекомендации пользователя из базы данных
+#? EN: Retrieves and formats user recommendations from database
+#* RU: Получает и форматирует рекомендации пользователя из базы данных
 async def recom_check_sdk(tg_id, name_user):
     connection = sqlite3.connect(main_path, check_same_thread=False)
     cursor = connection.cursor()
@@ -333,6 +351,10 @@ async def recom_check_sdk(tg_id, name_user):
         text = f'📝Рекомендации <a href="tg://user?id={tg_id}">{name_user}</a>:\n\n{text}'
     return text
 
+#? EN: Retrieves and formats user warnings from database
+#* RU: Получает и форматирует предупреждения пользователя из базы данных
+#? EN: Retrieves and formats user warnings from database
+#* RU: Получает и форматирует предупреждения пользователя из базы данных
 async def warn_check_sdk(tg_id, chat_id, name_user):
     connection = sqlite3.connect(warn_path, check_same_thread=False)
     cursor = connection.cursor()
@@ -375,6 +397,10 @@ async def warn_check_sdk(tg_id, chat_id, name_user):
         text = f'<b>❕Предупреждения <a href="tg://user?id={tg_id}">{name_user}</a> отсутвуют! Поздравляем!</b>'
         return text
 
+#? EN: Retrieves and formats user profile information from database
+#* RU: Получает и форматирует информацию о профиле пользователя из базы данных
+#? EN: Retrieves and formats user profile information from database
+#* RU: Получает и форматирует информацию о профиле пользователя из базы данных
 async def about_user_sdk(user_id, chat_id):
     connection = sqlite3.connect(main_path, check_same_thread=False)
     cursor = connection.cursor()
@@ -414,6 +440,10 @@ async def about_user_sdk(user_id, chat_id):
     text = f"{stars} [{user_about['rang']}] Ранг: <b>{rangs_name[user_about['rang']]}</b>\n<b>👤Имя: </b>{user_about['name']}\n<b>🎂Возраст:</b> {user_about['age']}\n<b>🏷️Клановый Ник:</b> {user_about['nik']}\n<b>👾Игровой Ник:</b> {user_about['nik_pubg']}\n<b>🎮Игровой айди:</b> <code>{user_about['id_pubg']}</code>"
     return text
 
+#? EN: Retrieves chat rules from database
+#* RU: Получает правила чата из базы данных
+#? EN: Retrieves chat rules from database
+#* RU: Получает правила чата из базы данных
 async def pravila_sdk(message):
     connection = sqlite3.connect(main_path, check_same_thread=False)
     cursor = connection.cursor()
@@ -421,6 +451,10 @@ async def pravila_sdk(message):
     return text
 
 
+#? EN: Extracts user ID from message (mention, reply, or direct ID)
+#* RU: Извлекает ID пользователя из сообщения (упоминание, ответ или прямой ID)
+#? EN: Extracts user ID from message (mention, reply, or direct ID)
+#* RU: Извлекает ID пользователя из сообщения (упоминание, ответ или прямой ID)
 async def get_user_id(message):
     try:
         user_id = int(message.text.split('tg://openmessage?user_id=')[1].split()[0])
@@ -451,6 +485,8 @@ async def get_user_id(message):
     else:
         return False
 
+#? EN: Extracts user ID from message, defaults to sender if not found
+#* RU: Извлекает ID пользователя из сообщения, по умолчанию возвращает отправителя
 async def get_user_id_self(message):
     try:
         user_id = int(message.text.split('tg://openmessage?user_id=')[1].split()[0])
@@ -487,6 +523,8 @@ async def get_user_id_self(message):
         return user_id
 
 
+#? EN: Removes specific warning from user and reorganizes warning list
+#* RU: Снимает конкретное предупреждение с пользователя и реорганизует список предупреждений
 async def snat_warn(user_id, number_warn, warn_count_new, message):
     connection = sqlite3.connect(warn_path, check_same_thread=False)
     cursor = connection.cursor()
@@ -546,6 +584,8 @@ async def snat_warn(user_id, number_warn, warn_count_new, message):
     cursor.execute(f'DELETE FROM [{-(message.chat.id)}snat] WHERE moder_give IS NULL AND warn_text IS NULL')
     connection.commit()
 
+#? EN: Checks if moderator has sufficient rank to execute command
+#* RU: Проверяет, имеет ли модератор достаточный ранг для выполнения команды
 async def is_successful_moder(moder_id, chat_id, command):
     global klan
     connection = sqlite3.connect(main_path, check_same_thread=False)
@@ -565,6 +605,8 @@ async def is_successful_moder(moder_id, chat_id, command):
     else:
         return True
 
+#? EN: Checks if moderator has higher rank than target user
+#* RU: Проверяет, имеет ли модератор более высокий ранг чем целевой пользователь
 async def is_more_moder(user_id, moder_id, chat_id):
     connection = sqlite3.connect(main_path, check_same_thread=False)
     cursor = connection.cursor()
@@ -582,6 +624,8 @@ async def is_more_moder(user_id, moder_id, chat_id):
     else:
         return True
 
+#? EN: Gives warning to user with specified reason
+#* RU: Выдает предупреждение пользователю с указанной причиной
 async def give_warn(message, comments, warn_count_new, user_id, is_first):
     connection = sqlite3.connect(warn_path, check_same_thread=False)
     cursor = connection.cursor()
@@ -598,6 +642,8 @@ async def give_warn(message, comments, warn_count_new, user_id, is_first):
 
     connection.commit()
 
+#? EN: Handles situation when user reaches warning limit
+#* RU: Обрабатывает ситуацию когда пользователь достигает лимита предупреждений
 async def limit_warns(message):
     buttons = [
         types.InlineKeyboardButton(text="Бан", callback_data="banFromPred"),
@@ -607,6 +653,8 @@ async def limit_warns(message):
     keyboard.add(*buttons)
     await message.reply(f'❗Достигнут лимит предупреждений\n\nЧто делать с пользователем?', reply_markup=keyboard)
 
+#? EN: Handles callback for banning user when warning limit is reached
+#* RU: Обрабатывает callback для бана пользователя при достижении лимита предупреждений
 @dp.callback_query_handler(text = 'banFromPred')
 async def ban_from_pred(call: types.CallbackQuery):
     connection = sqlite3.connect(warn_path, check_same_thread=False)
@@ -639,6 +687,8 @@ async def ban_from_pred(call: types.CallbackQuery):
         await bot.answer_callback_query(call.id, text='Не для тебя кнопку создавали', show_alert=True)
         return
 
+#? EN: Handles callback for removing warning when limit is reached
+#* RU: Обрабатывает callback для снятия предупреждения при достижении лимита
 @dp.callback_query_handler(text = "snat_pred")
 async def snat_pred(call: types.CallbackQuery):
     connection = sqlite3.connect(warn_path, check_same_thread=False)
@@ -664,6 +714,8 @@ async def snat_pred(call: types.CallbackQuery):
         await bot.answer_callback_query(call.id, text='Не для тебя кнопку создавали', show_alert=True)
         return
 
+#? EN: Handles callback for removing first warning
+#* RU: Обрабатывает callback для снятия первого предупреждения
 @dp.callback_query_handler(text = "1warn")
 async def warn_1(call: types.CallbackQuery):
     connection = sqlite3.connect(warn_path, check_same_thread=False)
@@ -685,6 +737,8 @@ async def warn_1(call: types.CallbackQuery):
     else:
         await bot.answer_callback_query(call.id, text='Не для тебя кнопку создавали', show_alert=True)
 
+#? EN: Handles callback for removing second warning
+#* RU: Обрабатывает callback для снятия второго предупреждения
 @dp.callback_query_handler(text = "2warn")
 async def warn_2(call: types.CallbackQuery):
     connection = sqlite3.connect(warn_path, check_same_thread=False)
@@ -711,6 +765,8 @@ async def warn_2(call: types.CallbackQuery):
     else:
         await bot.answer_callback_query(call.id, text='Не для тебя кнопку создавали', show_alert=True)
 
+#? EN: Handles callback for removing third warning
+#* RU: Обрабатывает callback для снятия третьего предупреждения
 @dp.callback_query_handler(text = "3warn")
 async def warn_3(call: types.CallbackQuery):
     connection = sqlite3.connect(warn_path, check_same_thread=False)
@@ -738,6 +794,8 @@ async def warn_3(call: types.CallbackQuery):
     else:
         await bot.answer_callback_query(call.id, text='Не для тебя кнопку создавали', show_alert=True)
 
+#? EN: Checks if user is first time seen in warning database
+#* RU: Проверяет, впервые ли пользователь попадает в базу предупреждений
 def firstSeen(tg_id, message):
 
     connection = sqlite3.connect(warn_path, check_same_thread=False)
@@ -749,6 +807,8 @@ def firstSeen(tg_id, message):
     else:
         return False
 
+#? EN: Inserts banned user information into database
+#* RU: Вставляет информацию о забаненном пользователе в базу данных
 async def insert_ban_user(user_id, user_men, moder_men, comments, message_id, chat_id):
     connection = sqlite3.connect(main_path, check_same_thread=False)
     cursor = connection.cursor()
@@ -774,6 +834,9 @@ async def insert_ban_user(user_id, user_men, moder_men, comments, message_id, ch
         pass
 
     connection.commit()
+
+#? EN: Mutes user for specified time period with given reason
+#* RU: Мутит пользователя на указанный период времени с указанной причиной
 async def mute_user(user_id, chat_id, muteint, mutetype, message, comments):
     connection = sqlite3.connect(main_path, check_same_thread=False)
     cursor = connection.cursor()
@@ -835,6 +898,8 @@ async def mute_user(user_id, chat_id, muteint, mutetype, message, comments):
             parse_mode='html')
         return False
 
+#? EN: Unmutes user and removes mute record from database
+#* RU: Размучивает пользователя и удаляет запись о муте из базы данных
 async def unmute_user(user_id, chat_id, message):
     connection = sqlite3.connect(main_path, check_same_thread=False)
     cursor = connection.cursor()
@@ -863,6 +928,8 @@ async def unmute_user(user_id, chat_id, message):
     return True
 
 
+#? EN: Bans user from chat and records ban information in database
+#* RU: Банит пользователя из чата и записывает информацию о бане в базу данных
 async def ban_user(user_id, chat_id, user_men, moder_men, comments, message_id, message):
     try:
         await bot.ban_chat_member(chat_id, user_id)
@@ -887,6 +954,8 @@ async def ban_user(user_id, chat_id, user_men, moder_men, comments, message_id, 
         return False
 
 
+#? EN: Unbans user from chat and removes ban record from database
+#* RU: Разбанивает пользователя в чате и удаляет запись о бане из базы данных
 async def unban_user(chat_id,user_id):
     await bot.unban_chat_member(chat_id, user_id)
     connection = sqlite3.connect(main_path, check_same_thread=False)
@@ -894,6 +963,8 @@ async def unban_user(chat_id,user_id):
     cursor.execute(f'DELETE FROM [{-(chat_id)}bans] WHERE tg_id = ?', (user_id,))
     connection.commit()
 
+#? EN: Kicks user from chat without permanent ban
+#* RU: Кикает пользователя из чата без постоянного бана
 async def kick_user(user_id, chat_id):
     try:
         await bot.kick_chat_member(chat_id, user_id)

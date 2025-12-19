@@ -7,12 +7,18 @@ import datetime
 import aiogram
 from aiogram.dispatcher.filters import Text
 
-
+#? EN: User IDs allowed to create new links
+#* RU: ID пользователей, которым разрешено создавать новые ссылки
 can_new_link_users = [8015726709, 1401086794, 1240656726]
+#? EN: User IDs allowed to create recommendations
+#* RU: ID пользователей, которым разрешено создавать рекомендации
 can_recommend_users = [8015726709, 1401086794, 1240656726, 5714854312, 1803851598]
+#? EN: User IDs allowed to access admin panel
+#* RU: ID пользователей, которым разрешен доступ к админ-панели
 can_admin_panel = [8015726709, 1401086794, 1240656726]
 
-
+#? EN: Database paths configuration
+#* RU: Конфигурация путей к базам данных
 curent_path = (Path(__file__)).parent.parent
 main_path = curent_path / 'databases' / 'Base_bot.db'
 warn_path = curent_path / 'databases' / 'warn_list.db'
@@ -20,14 +26,14 @@ datahelp_path = curent_path / 'databases' / 'my_database.db'
 tur_path = curent_path / 'databases' / 'tournaments.db'
 dinamik_path = curent_path / 'databases' / 'din_data.db'
 
-
+#? EN: Bot configuration
+#* RU: Конфигурация бота
 token = "8156493008:AAF2QyOzc3rBAtDSq2sO5M1LFjNz4a7xTc8"
 bot = Bot(token=token)
 dp = Dispatcher(bot)
 
-
-
-#импорт айди рабочих чатов
+#? EN: Import working chat IDs from database
+#* RU: Импорт ID рабочих чатов из базы данных
 connection = sqlite3.connect(main_path, check_same_thread=False)
 cursor = connection.cursor()
 logs_gr = -int(cursor.execute(f"SELECT chat_id FROM chat_ids WHERE chat_name = ?", ('logs_gr',)).fetchall()[0][0])

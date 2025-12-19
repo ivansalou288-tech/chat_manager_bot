@@ -35,6 +35,8 @@ bot = telebot.TeleBot(token)
 
 is_in_clan = False
 
+#? EN: Generates and sends clan and squad invite links to the user based on their assigned squad
+#* RU: Генерирует и отправляет ссылки-приглашения в клан и состав пользователю на основе назначенного состава
 def links(message, sostav):
     connection = sqlite3.connect(dinamik_path, check_same_thread=False)
     cursor = connection.cursor()
@@ -53,6 +55,8 @@ def links(message, sostav):
     connection.commit()
     
 
+#? EN: Sends step-by-step guide with images on how to join the clan in PUBG game
+#* RU: Отправляет пошаговое руководство с изображениями о том, как вступить в клан в игре PUBG
 def gaid(message):
     id_copy = CopyTextButton(text=str(51445023900))
 
@@ -74,6 +78,8 @@ def gaid(message):
 
 
 
+#? EN: Handles /start command and shows main menu with options to join clan or indicate existing membership
+#* RU: Обрабатывает команду /start и показывает главное меню с опциями вступления в клан или указания существующего членства
 @bot.message_handler(commands=['start'])
 def start(message):
     if message.chat.id != message.from_user.id:
@@ -94,6 +100,8 @@ def start(message):
     bot.send_photo(chat_id=message.chat.id, photo=open(f'{curent_path}/photos/klan_ava.jpg', 'rb'), reply_markup=keyboard, caption='Приветствуем тебя в нашем боте!\nЧто ты хочешь сделать?')
 
 
+#? EN: Handles callback queries from inline buttons - processes new member registration or existing member confirmation
+#* RU: Обрабатывает колбэк-запросы от инлайн-кнопок - обрабатывает регистрацию нового участника или подтверждение существующего участника
 @bot.callback_query_handler(func=lambda call: True)
 def new_member(call):
     if call.data == "not_new":
@@ -105,6 +113,8 @@ def new_member(call):
         global is_in_clan
         is_in_clan = True
 
+#? EN: Handles photo messages from users who completed clan joining process and sends them invite links
+#* RU: Обрабатывает фото-сообщения от пользователей, завершивших процесс вступления в клан, и отправляет им ссылки-приглашения
 @bot.message_handler(content_types=['photo'])
 def get_media(message):
     connection = sqlite3.connect(dinamik_path, check_same_thread=False)
@@ -115,6 +125,8 @@ def get_media(message):
         return
     links(message, tg_id)
 
+#? EN: Processes text messages containing entry codes and starts the clan registration process
+#* RU: Обрабатывает текстовые сообщения, содержащие коды вступления, и запускает процесс регистрации в клан
 @bot.message_handler()
 def get_text_messages(message):
 
@@ -156,6 +168,8 @@ def get_text_messages(message):
 
 
 
+    #? EN: Checks if user is already registered in the clan database
+    #* RU: Проверяет, зарегистрирован ли пользователь в базе данных клана
     def firstSeen(get_id):
         connection = sqlite3.connect(main_path, check_same_thread=False)
         cursor = connection.cursor()
@@ -178,6 +192,8 @@ def get_text_messages(message):
         print(f'{message.from_user.id} входит в клан')
 
 
+        #? EN: Processes user's name input during registration
+        #* RU: Обрабатывает ввод имени пользователя во время регистрации
         def name(message):
             connection = sqlite3.connect(main_path, check_same_thread=False)
             cursor = connection.cursor()
@@ -194,6 +210,8 @@ def get_text_messages(message):
             msg = bot.send_message(message.chat.id, 'Принято! теперь напиши свой возраст:')
             bot.register_next_step_handler(msg, aget)
 
+        #? EN: Processes and validates user's age input during registration
+        #* RU: Обрабатывает и проверяет ввод возраста пользователя во время регистрации
         def aget(message):
 
 
@@ -219,6 +237,8 @@ def get_text_messages(message):
             msg = bot.send_message(message.chat.id, 'Принято! теперь напиши свой игровой айди:')
             bot.register_next_step_handler(msg, id_pubgt)
 
+        #? EN: Processes and validates user's PUBG ID input during registration
+        #* RU: Обрабатывает и проверяет ввод PUBG ID пользователя во время регистрации
         def id_pubgt(message):
 
             try:
@@ -229,6 +249,8 @@ def get_text_messages(message):
                 bot.register_next_step_handler(msg, id_pubgt)
                 return
 
+            #? EN: Splits a number into individual digits for validation
+            #* RU: Разбивает число на отдельные цифры для проверки
             def split_number(number):
                 num = []
                 while number > 0:
@@ -254,6 +276,8 @@ def get_text_messages(message):
             msg = bot.send_message(message.chat.id, 'Принято! теперь напиши игровой ник:')
             bot.register_next_step_handler(msg, nik_pubg)
 
+        #? EN: Processes user's PUBG nickname input and completes registration
+        #* RU: Обрабатывает ввод PUBG никнейма пользователя и завершает регистрацию
         def nik_pubg(message):
 
             nik_pubg = message.text
@@ -269,6 +293,8 @@ def get_text_messages(message):
             #функция кидания ссылок на клан, состав, и правил
             addUser(message.from_user.id, message.from_user.username)
 
+        #? EN: Adds the new user to clan and squad databases and sends welcome message with instructions
+        #* RU: Добавляет нового пользователя в базы данных клана и состава и отправляет приветственное сообщение с инструкциями
         def addUser(tg_id, username):
 
             connection = sqlite3.connect(main_path, check_same_thread=False)

@@ -1,6 +1,8 @@
 from admin_config import *
 
 
+#? EN: Checks if user has permission to create new chat links and redirects to link creation
+#* RU: Проверяет, есть ли у пользователя права на создание новых ссылок для чатов и перенаправляет к созданию ссылки
 @dp.callback_query_handler(text="new_chat_link_check")
 async def new_link_check(call: types.CallbackQuery):
     if call.from_user.id in can_new_link_users:
@@ -10,6 +12,8 @@ async def new_link_check(call: types.CallbackQuery):
         await bot.answer_callback_query(call.id, text='⚠️Тебе не доступна эта функция')
         return
 
+#? EN: Shows squad selection menu for creating new chat links (1st or 2nd squad)
+#* RU: Показывает меню выбора состава для создания новых ссылок чата (1-й или 2-й состав)
 @dp.callback_query_handler(text="new_chat_link")
 async def new_link(call: types.CallbackQuery):
     await call.message.delete()
@@ -21,6 +25,8 @@ async def new_link(call: types.CallbackQuery):
     keyboard.add(*buttons)
     await call.message.answer("Создание новой ссылки", reply_markup=keyboard)
 
+#? EN: Shows participant count selection for 1st squad links (1, 2, or 3 people)
+#* RU: Показывает выбор количества участников для ссылок 1-го состава (1, 2 или 3 человека)
 @dp.callback_query_handler(text="1sost")
 async def first_sost(call: types.CallbackQuery):
     await call.message.delete()
@@ -34,6 +40,8 @@ async def first_sost(call: types.CallbackQuery):
     await call.message.answer('На сколько человек расчитана ссылка', reply_markup=keyboard)
 
 
+#? EN: Shows participant count selection for 2nd squad links (1, 2, or 3 people)
+#* RU: Показывает выбор количества участников для ссылок 2-го состава (1, 2 или 3 человека)
 @dp.callback_query_handler(text="2sost")
 async def two_sost(call: types.CallbackQuery):
     await call.message.delete()
@@ -46,6 +54,8 @@ async def two_sost(call: types.CallbackQuery):
     keyboard.add(*buttons)
     await call.message.answer('На сколько человек расчитана ссылка', reply_markup=keyboard)
 
+#? EN: Creates a single-use link for 1st squad with 1 activation
+#* RU: Создаёт одноразовую ссылку для 1-го состава с 1 активацией
 @dp.callback_query_handler(text="one1pep")
 async def one1pep(call: types.CallbackQuery):
     activate_count = 1
@@ -60,6 +70,8 @@ async def one1pep(call: types.CallbackQuery):
     connection.commit()
     connection.close()
 
+#? EN: Creates a link for 1st squad with 2 activations
+#* RU: Создаёт ссылку для 1-го состава с 2 активациями
 @dp.callback_query_handler(text="one2pep")
 async def one2pep(call: types.CallbackQuery):
     activate_count = 2
@@ -77,6 +89,8 @@ async def one2pep(call: types.CallbackQuery):
     connection.close()
 
 
+#? EN: Creates a link for 1st squad with 3 activations
+#* RU: Создаёт ссылку для 1-го состава с 3 активациями
 @dp.callback_query_handler(text="one3pep")
 async def one3pep(call: types.CallbackQuery):
     activate_count = 3
@@ -94,6 +108,8 @@ async def one3pep(call: types.CallbackQuery):
     connection.close()
 
 
+#? EN: Creates a single-use link for 2nd squad with 1 activation
+#* RU: Создаёт одноразовую ссылку для 2-го состава с 1 активацией
 @dp.callback_query_handler(text="two1pep")
 async def two1pep(call: types.CallbackQuery):
     activate_count = 1
@@ -111,6 +127,8 @@ async def two1pep(call: types.CallbackQuery):
     connection.close()
 
 
+#? EN: Creates a link for 2nd squad with 2 activations
+#* RU: Создаёт ссылку для 2-го состава с 2 активациями
 @dp.callback_query_handler(text="two2pep")
 async def two2pep(call: types.CallbackQuery):
     activate_count = 2
@@ -128,6 +146,8 @@ async def two2pep(call: types.CallbackQuery):
     connection.close()
 
 
+#? EN: Creates a link for 2nd squad with 3 activations
+#* RU: Создаёт ссылку для 2-го состава с 3 активациями
 @dp.callback_query_handler(text="two3pep")
 async def two3pep(call: types.CallbackQuery):
     activate_count = 3

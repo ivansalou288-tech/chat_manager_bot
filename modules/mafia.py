@@ -568,7 +568,8 @@ async def between_nights_vote_and_kill(message: types.Message, game: str) -> boo
     return False
 
 
-# * Создает новую игру мафии и генерирует ссылку для регистрации игроков
+#? EN: Creates a new Mafia game in the current chat and posts a join link for players to register.
+#* RU: Создаёт новую игру «Мафия» в текущем чате и отправляет ссылку, по которой игроки могут зарегистрироваться.
 @dp.message_handler(commands=["мафия", " мафия"], commands_prefix=["!", '.', '/'])
 async def get_ref(message: types.Message):
     if message.from_user.id == message.chat.id:
@@ -595,7 +596,8 @@ async def get_ref(message: types.Message):
 
 
 
-# * Обрабатывает регистрацию игроков по ссылке и добавляет их в игру
+#? EN: Handles /start with a game code, registers the user as a Mafia player and updates the lobby message.
+#* RU: Обрабатывает /start с кодом игры, регистрирует пользователя в мафии и обновляет сообщение‑лобби.
 @dp.message_handler(commands=["start"])
 async def handler(message: types.Message):
     args = message.get_args()
@@ -637,7 +639,8 @@ async def handler(message: types.Message):
 
 
 
-# * Раздает роли игрокам случайным образом и запускает игру
+#? EN: Distributes Mafia roles randomly among registered players in this chat and starts the game.
+#* RU: Случайным образом раздаёт роли в мафии среди зарегистрированных игроков этого чата и запускает игру.
 @dp.message_handler(commands=["star"], commands_prefix=["!", '.', '/'])
 async def give_roles(message: types.Message):
     global ROLES_ABOUT
@@ -756,12 +759,14 @@ async def give_roles(message: types.Message):
     #* connection.commit()
 
 
-# * Запускает игру (переходит к первой ночи)
+#? EN: Helper to start the Mafia game – simply switches to the first night phase.
+#* RU: Вспомогательная функция запуска игры в мафию – переводит игру к первой ночи.
 async def start_game(message, game):
     await start_night(message, game)
 
 
-# * Начинает ночную фазу - отправляет задания всем активным ролям
+#? EN: Starts the night phase: announces night, prepares state and sends night tasks to all active roles.
+#* RU: Запускает ночную фазу: объявляет ночь, подготавливает состояние и рассылает задания всем активным ролям.
 async def start_night(message,game):
     connection = sqlite3.connect(mafia_path, check_same_thread=False)
     cursor = connection.cursor()
@@ -834,7 +839,8 @@ async def start_night(message,game):
     if maniak:
         await maniak_funk(message, game, maniak)
 
-# * Отправляет доктору список игроков для лечения
+#? EN: Sends the doctor a list of players to heal during the night phase.
+#* RU: Отправляет доктору список игроков для лечения в ночной фазе.
 async def doctor_funk(message, game, doctor):
     connection = sqlite3.connect(mafia_path, check_same_thread=False)
     cursor = connection.cursor()
@@ -855,7 +861,8 @@ async def doctor_funk(message, game, doctor):
     await bot.send_message(chat_id=doctor, text='Кого ты хочешь вылечить?', reply_markup=keyboard)
 
 
-# * Отправляет комиссару список игроков для проверки
+#? EN: Sends the police/commissioner a list of players to investigate during the night.
+#* RU: Отправляет комиссару список игроков для проверки в ночной фазе.
 async def police_funk(message, game, police):
     connection = sqlite3.connect(mafia_path, check_same_thread=False)
     cursor = connection.cursor()
@@ -874,7 +881,8 @@ async def police_funk(message, game, police):
     await bot.send_message(chat_id=police, text='Кого ты хочешь проверить?', reply_markup=keyboard)
 
 
-# * Отправляет дону мафии список игроков для убийства
+#? EN: Sends the mafia don a list of players to kill during the night phase.
+#* RU: Отправляет дону мафии список игроков для убийства в ночной фазе.
 async def don_mafia_funk(message, game, don_mafia):
     connection = sqlite3.connect(mafia_path, check_same_thread=False)
     cursor = connection.cursor()
@@ -889,7 +897,8 @@ async def don_mafia_funk(message, game, don_mafia):
     await bot.send_message(chat_id=don_mafia, text='Кого ты хочешь убить?', reply_markup=keyboard)
 
 
-# * Отправляет мафии список игроков для предложения дону
+#? EN: Sends mafia members a list of players to suggest to the don for killing.
+#* RU: Отправляет мафии список игроков для предложения дону на убийство.
 async def mafia_funk(message, game, mafia, don_mafia):
     connection = sqlite3.connect(mafia_path, check_same_thread=False)
     cursor = connection.cursor()
@@ -908,7 +917,8 @@ async def mafia_funk(message, game, mafia, don_mafia):
     await bot.send_message(chat_id=mafia, text='Кого ты хочешь предложить дону?', reply_markup=keyboard)
 
 
-# * Отправляет маньяку список игроков для убийства
+#? EN: Sends the maniac a list of players to kill during the night phase.
+#* RU: Отправляет маньяку список игроков для убийства в ночной фазе.
 async def maniak_funk(message, game, maniak):
     connection = sqlite3.connect(mafia_path, check_same_thread=False)
     cursor = connection.cursor()
@@ -1185,7 +1195,8 @@ async def successful_recom1(call: types.CallbackQuery):
     await _maybe_finish_night(call.message, game)
     
 
-# * Стартовое меню бота с информацией о клане
+#? EN: Shows the bot's main menu with clan information and available commands.
+#* RU: Показывает главное меню бота с информацией о клане и доступными командами.
 async def start(message):
     if message.chat.id != message.from_user.id:
         return
@@ -1211,7 +1222,8 @@ async def start(message):
 
     await bot.send_photo(message.chat.id,photo=open(f'{curent_path}/photos/klan_ava.jpg', 'rb'), caption=f'Приветсвуем тебя в <b>WERTY | Чат-менеджер</b>\n\n{is_in_klan}\n\nЧто ты хочешь сделать?', parse_mode='html',reply_markup=keyboard)
 
-# * Показывает список доступных команд бота
+#? EN: Displays the list of available bot commands when the commands button is pressed.
+#* RU: Показывает список доступных команд бота при нажатии на кнопку команд.
 @dp.callback_query_handler(text="commands")
 async def successful_recom1(call: types.CallbackQuery):
     connection = sqlite3.connect(main_path, check_same_thread=False)
@@ -1221,7 +1233,8 @@ async def successful_recom1(call: types.CallbackQuery):
     await bot.answer_callback_query(call.id, text='')
 
 
-# * Завершает игру по команде stop и очищает все таблицы
+#? EN: Terminates the game via 'stop' command and cleans up all related database tables.
+#* RU: Завершает игру по команде 'stop' и очищает все связанные таблицы базы данных.
 @dp.message_handler(commands=["stop"], commands_prefix=["!", '.', '/'])
 async def stop_game(message: types.Message):
     if message.from_user.id != 1240656726:
@@ -1269,7 +1282,8 @@ async def stop_game(message: types.Message):
     await message.answer('🛑 Игра завершена и все данные очищены')
 
 
-# * Тестовая команда для принудительного завершения ночи (только для админа)
+#? EN: Test command to forcefully end the night phase (admin only).
+#* RU: Тестовая команда для принудительного завершения ночи (только для админа).
 @dp.message_handler(commands=["test"], commands_prefix=["!", '.', '/'])
 async def get_ref(message: types.Message):
     connection = sqlite3.connect(mafia_path, check_same_thread=False)

@@ -4,6 +4,8 @@ from aiogram.types import ContentType, ParseMode, InlineKeyboardButton, InlineKe
 
 from main.config import *
 
+#? EN: Main farm command – gives a random amount of eZ¢ once every 4 hours to the user’s bag.
+#* RU: Основная команда фарма – добавляет случайное количество eZ¢ в мешок пользователя не чаще одного раза в 4 часа.
 @dp.message_handler(Text(startswith=['фарма', 'ферма', 'раб раб работать'], ignore_case=True), content_types=ContentType.TEXT,is_forwarded=False)
 async def farm(message):
     connection = sqlite3.connect(main_path, check_same_thread=False)
@@ -68,6 +70,8 @@ async def farm(message):
         connection.commit()
 
 
+#? EN: Shows how many eZ¢ are currently stored in the specified user’s bag (by @, reply, or self).
+#* RU: Показывает, сколько eZ¢ сейчас лежит в мешке указанного пользователя (по @, ответу или себе).
 @dp.message_handler(Text(startswith=['мешок'], ignore_case=True), content_types=ContentType.TEXT,is_forwarded=False)
 async def mesh(message):
     connection = sqlite3.connect(main_path, check_same_thread=False)
@@ -105,6 +109,8 @@ async def mesh(message):
     await message.answer(f'💰 В мешке <a href="https://t.me/{username}">{name_user}</a>: 🍊 {meshok_old}  eZ¢', parse_mode=ParseMode.HTML, disable_web_page_preview=True)
 
 
+#? EN: Starts the transfer UI to send eZ¢ from your bag to another user with adjustable amount.
+#* RU: Запускает интерфейс перевода eZ¢ из твоего мешка другому пользователю с настраиваемой суммой.
 @dp.message_handler(Text(startswith=['! перевести'], ignore_case=True), content_types=ContentType.TEXT,is_forwarded=False)
 async def mesh(message):
     connection = sqlite3.connect(main_path, check_same_thread=False)
@@ -161,6 +167,8 @@ async def mesh(message):
 
 
 
+#? EN: Increases the planned transfer amount by 1000 eZ¢ (if the sender has enough coins).
+#* RU: Увеличивает сумму перевода на 1000 eZ¢ (если у отправителя достаточно монет).
 @dp.callback_query_handler(text = 'pls_1000')
 async def plus(call: types.CallbackQuery):
     print(call.data)
@@ -195,6 +203,8 @@ async def plus(call: types.CallbackQuery):
     await call.message.edit_text(text=f'💰 В твоем мешке: 🍊 {meshok}  eZ¢\nТвой перевод: {stavka+1000}',parse_mode='html', reply_markup=keyboard)
     await bot.answer_callback_query(call.id, text='')
 
+#? EN: Decreases the planned transfer amount by 1000 eZ¢ but not below 100.
+#* RU: Уменьшает сумму перевода на 1000 eZ¢, но не ниже 100.
 @dp.callback_query_handler(text = 'min_1000')
 async def minus(call: types.CallbackQuery):
     connection = sqlite3.connect(main_path, check_same_thread=False)
@@ -227,6 +237,8 @@ async def minus(call: types.CallbackQuery):
     await call.message.edit_text(text=f'💰 В твоем мешке: 🍊 {meshok}  eZ¢\nТвой перевод: {stavka-1000}',parse_mode='html', reply_markup=keyboard)
     await bot.answer_callback_query(call.id, text='')
 
+#? EN: Increases the planned transfer amount by 50 000 eZ¢ (large step).
+#* RU: Увеличивает сумму перевода на 50 000 eZ¢ (крупный шаг).
 @dp.callback_query_handler(text = 'pls_50')
 async def plus(call: types.CallbackQuery):
     print(call.data)
@@ -261,6 +273,8 @@ async def plus(call: types.CallbackQuery):
     await call.message.edit_text(text=f'💰 В твоем мешке: 🍊 {meshok}  eZ¢\nТвой перевод: {stavka+50000}',parse_mode='html', reply_markup=keyboard)
     await bot.answer_callback_query(call.id, text='')
 
+#? EN: Decreases the planned transfer amount by 50 000 eZ¢ but not below 100.
+#* RU: Уменьшает сумму перевода на 50 000 eZ¢, но не ниже 100.
 @dp.callback_query_handler(text = 'min_50')
 async def minus(call: types.CallbackQuery):
     connection = sqlite3.connect(main_path, check_same_thread=False)
@@ -294,6 +308,8 @@ async def minus(call: types.CallbackQuery):
     await call.message.edit_text(text=f'💰 В твоем мешке: 🍊 {meshok}  eZ¢\nТвой перевод: {stavka-50000}',parse_mode='html', reply_markup=keyboard)
     await bot.answer_callback_query(call.id, text='')
 
+#? EN: Increases the planned transfer amount by 100 eZ¢ (small step).
+#* RU: Увеличивает сумму перевода на 100 eZ¢ (малый шаг).
 @dp.callback_query_handler(text = 'pls_100')
 async def plus(call: types.CallbackQuery):
     print(call.data)
@@ -328,6 +344,8 @@ async def plus(call: types.CallbackQuery):
     await call.message.edit_text(text=f'💰 В твоем мешке: 🍊 {meshok}  eZ¢\nТвой перевод: {stavka+100}',parse_mode='html', reply_markup=keyboard)
     await bot.answer_callback_query(call.id, text='')
 
+#? EN: Decreases the planned transfer amount by 100 eZ¢ but not below 100.
+#* RU: Уменьшает сумму перевода на 100 eZ¢, но не ниже 100.
 @dp.callback_query_handler(text = 'min_100')
 async def minus(call: types.CallbackQuery):
     connection = sqlite3.connect(main_path, check_same_thread=False)
@@ -361,6 +379,8 @@ async def minus(call: types.CallbackQuery):
     await call.message.edit_text(text=f'💰 В твоем мешке: 🍊 {meshok}  eZ¢\nТвой перевод: {stavka-100}',parse_mode='html', reply_markup=keyboard)
     await bot.answer_callback_query(call.id, text='')
 
+#? EN: Sets the planned transfer amount to the full current balance of the sender’s bag.
+#* RU: Устанавливает сумму перевода равной всему текущему балансу мешка отправителя.
 @dp.callback_query_handler(text = 'all_p')
 async def plus(call: types.CallbackQuery):
     print(call.data)
@@ -394,6 +414,8 @@ async def plus(call: types.CallbackQuery):
     await bot.answer_callback_query(call.id, text='')
 
 
+#? EN: Confirms and performs the transfer: moves the selected eZ¢ from sender to recipient.
+#* RU: Подтверждает и выполняет перевод: списывает выбранные eZ¢ с отправителя и зачисляет получателю.
 @dp.callback_query_handler(text = 'perev')
 async def plus(call: types.CallbackQuery):
     connection = sqlite3.connect(main_path, check_same_thread=False)

@@ -2,22 +2,34 @@ import sys
 import os
 import random
 from datetime import datetime, timedelta
-
+import sqlite3
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from aiogram import types
 from aiogram.dispatcher.filters import Text
 from aiogram.types import ContentType, ParseMode, ChatPermissions
 
-from main.config import dp, bot, chats, mute_user
+from main.config import dp, bot, chats, mute_user, main_path
 
 
+#? EN: Chat command for playing Russian roulette: user risks getting muted for a short time (1/6 chance) in group chats.
+#* RU: Команда чата для игры в русскую рулетку: пользователь рискует получить короткий мут (шанс 1 из 6) в групповых чатах.
 @dp.message_handler(
     Text(startswith=["! русская рулетка", "!русская рулетка", ".русская рулетка", "/русская рулетка", "русская рулетка"], ignore_case=True),
     content_types=ContentType.TEXT,
     is_forwarded=False,
 )
 async def russian_roulette(message: types.Message):
+    connection = sqlite3.connect(main_path, check_same_thread=False)
+    cursor = connection.cursor()
+    black_list=[]
+    blk = cursor.execute('SELECT user_id FROM black_list').fetchall()
+    for i in blk:
+        black_list.append(i[0])
+
+    if message.from_user.id in black_list:
+        await message.answer('В доступе отказано, ты в черном списке')
+        return
     MUTE_TIME = 5
     # Только групповые чаты
     if message.chat.id == message.from_user.id:

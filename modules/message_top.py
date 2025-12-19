@@ -43,6 +43,8 @@ def _detect_message_counter_column(cursor: sqlite3.Cursor, table_name: str) -> O
             return candidate
     return None
 
+#? EN: Shows the all‑time top users by message count in this chat (supports optional limit like «!топ сообщений 20»).
+#* RU: Показывает топ пользователей по количеству сообщений за всё время в этом чате (поддерживает лимит, например «!топ сообщений 20»).
 @dp.message_handler(Text(startswith=["топ вся", "!топ сообщений"], ignore_case=True), content_types=ContentType.TEXT, is_forwarded=False)
 async def show_messages_top_all_time(message: types.Message) -> None:
     # Только в группах

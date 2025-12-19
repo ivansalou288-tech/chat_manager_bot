@@ -1,4 +1,6 @@
 from admin_config import *
+#? EN: Checks if user has permission to create recommendations and redirects to recommendation creation
+#* RU: Проверяет, есть ли у пользователя права на создание рекомендаций и перенаправляет к созданию рекомендации
 @dp.callback_query_handler(text="recommend_check")
 async def recommend_check(call: types.CallbackQuery):
     if call.from_user.id in can_recommend_users:
@@ -9,6 +11,8 @@ async def recommend_check(call: types.CallbackQuery):
         return
 
 
+#? EN: Starts the recommendation creation process by asking for username or PUBG ID
+#* RU: Запускает процесс создания рекомендации, запрашивая юзернейм или PUBG ID
 @dp.callback_query_handler(text="recommend")
 async def recommend(call: types.CallbackQuery):
     connection = sqlite3.connect(main_path, check_same_thread=False)
@@ -22,6 +26,8 @@ async def recommend(call: types.CallbackQuery):
     connection.commit()
 
 
+#? EN: Handles incorrect user selection and restarts the recommendation process
+#* RU: Обрабатывает неправильный выбор пользователя и перезапускает процесс рекомендации
 @dp.callback_query_handler(text="not_successful_user")
 async def not_successful_user(call: types.CallbackQuery):
     try:
@@ -31,6 +37,8 @@ async def not_successful_user(call: types.CallbackQuery):
     await recommend(call)
 
 
+#? EN: Confirms user selection and asks for the reason of recommendation
+#* RU: Подтверждает выбор пользователя и запрашивает причину рекомендации
 @dp.callback_query_handler(text="successful_user")
 async def successful_user(call: types.CallbackQuery):
     connection = sqlite3.connect(main_path, check_same_thread=False)
@@ -45,6 +53,8 @@ async def successful_user(call: types.CallbackQuery):
     await bot.delete_message(call.message.chat.id, (call.message.message_id) - 1)
     await call.message.answer('Напиши чем отличился данный игрок в формате: \n\n<code>Причина:</code> убил 35 паков в соло', parse_mode='html')
 
+#? EN: Processes the recommendation reason and asks for the target rank
+#* RU: Обрабатывает причину рекомендации и запрашивает целевой ранг
 @dp.message_handler(Text(startswith="Причина:", ignore_case=True))
 async def comments_recom(message: types.Message):
     connection = sqlite3.connect(main_path, check_same_thread=False)
@@ -67,6 +77,8 @@ async def comments_recom(message: types.Message):
     await bot.delete_message(message.chat.id, message.message_id)
     await message.answer('Принято! Теперь напиши на кого ты его рекомендуешь в формате: \n\n<code>Рекомендую на:</code> тест отв', parse_mode='html')
 
+#? EN: Processes the target rank and shows final recommendation confirmation
+#* RU: Обрабатывает целевой ранг и показывает финальное подтверждение рекомендации
 @dp.message_handler(Text(startswith="Рекомендую на:", ignore_case=True))
 async def rang_recom(message: types.Message):
     connection = sqlite3.connect(main_path, check_same_thread=False)
@@ -107,6 +119,8 @@ async def rang_recom(message: types.Message):
         f'Рекомендация <a href="tg://user?id={user_id}">Пользователя</a>:\n\n🟢 <b>1</b>. От {moder}:\n<b>&#8195Чем отличился:</b> {comments}\n<b>&#8195Рекомендован на:</b> {rang}',
         parse_mode='html', reply_markup=keyboard)
 
+#? EN: Processes username/PUBG ID input and validates user data for recommendations
+#* RU: Обрабатывает ввод юзернейма/PUBG ID и проверяет данные пользователя для рекомендаций
 @dp.message_handler()
 async def user_get(message: types.Message):
     connection = sqlite3.connect(main_path, check_same_thread=False)
@@ -150,6 +164,8 @@ async def user_get(message: types.Message):
     if is_do == 11:
             await recommend_snat_2_step(message, user_id)
 
+#? EN: Confirms and saves the recommendation to the database
+#* RU: Подтверждает и сохраняет рекомендацию в базу данных
 @dp.callback_query_handler(text="successful_recom")
 async def successful_recom(call: types.CallbackQuery):
     await call.message.edit_text('✅Рекомендация заполнена')
@@ -179,6 +195,8 @@ async def successful_recom(call: types.CallbackQuery):
     cursor.execute('DELETE FROM din_admn_user_data WHERE moder = ?', (moder,))
     connection.commit()
 
+#? EN: Validates user data and prevents self-recommendations or duplicate recommendations
+#* RU: Проверяет данные пользователя и предотвращает саморекомендации или повторные рекомендации
 async def recom_user_check(message, user_id, pubg_id, date, nik_pubg, nik, username):
     connection = sqlite3.connect(main_path, check_same_thread=False)
     cursor = connection.cursor()
@@ -208,6 +226,8 @@ async def recom_user_check(message, user_id, pubg_id, date, nik_pubg, nik, usern
 
 
 
+#? EN: Checks if user has permission to remove recommendations and starts the removal process
+#* RU: Проверяет, есть ли у пользователя права на удаление рекомендаций и запускает процесс удаления
 @dp.callback_query_handler(text="recommend_check_snat")
 async def recommend_check_snat(call: types.CallbackQuery):
     if call.from_user.id in can_recommend_users:
@@ -218,6 +238,8 @@ async def recommend_check_snat(call: types.CallbackQuery):
         return
 
 
+#? EN: First step of recommendation removal - asks for username or PUBG ID
+#* RU: Первый шаг удаления рекомендации - запрашивает юзернейм или PUBG ID
 @dp.callback_query_handler(text="recommend_snat_1_step")
 async def recommend_snat_1_step(call: types.CallbackQuery):
     connection = sqlite3.connect(main_path, check_same_thread=False)
@@ -231,6 +253,8 @@ async def recommend_snat_1_step(call: types.CallbackQuery):
         cursor.execute(f"UPDATE dinamic_admn_recommend SET is_do = ? WHERE user_id = ?", (11, call.from_user.id,))
     connection.commit()
 
+#? EN: Second step of recommendation removal - validates and removes the recommendation
+#* RU: Второй шаг удаления рекомендации - проверяет и удаляет рекомендацию
 @dp.callback_query_handler(text="recommend_snat_2_step")
 async def recommend_snat_2_step(message, user_id):
     moder = message.from_user.id

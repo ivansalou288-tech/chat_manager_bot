@@ -10,6 +10,8 @@ from password_generator import PasswordGenerator
 
 from main.config import *
 
+#? EN: Creates a new tournament with name, date, max participants, rules and comments parsed from the message.
+#* RU: Создаёт новый турнир, разбирая из сообщения название, дату, максимум участников, правила и комментарии.
 @dp.message_handler(Text(startswith=['+турнир'], ignore_case=True),content_types=ContentType.TEXT,is_forwarded=False)
 async def create_tur(message: types.Message):
     connection = sqlite3.connect(tur_path)
@@ -89,6 +91,8 @@ async def create_tur(message: types.Message):
         await message.answer('📝У тебя уже есть зарегестрированный турнир!\n\n💬 <i>Сначала нужно провести или отменить уже зарегестрированный турнир</i>', parse_mode=ParseMode.HTML)
 
 
+#? EN: Asks the organizer to confirm deletion of their active tournament via inline buttons.
+#* RU: Спрашивает у организатора подтверждение на удаление его активного турнира через инлайн‑кнопки.
 @dp.message_handler(Text(startswith=['-турнир'], ignore_case=True),content_types=ContentType.TEXT,is_forwarded=False)
 async def dell_tur(message: types.Message):
     connection = sqlite3.connect(tur_path)
@@ -112,6 +116,8 @@ async def dell_tur(message: types.Message):
         return
 
 
+#? EN: Shows a list of all active tournaments with IDs, organizers and registration status.
+#* RU: Показывает список всех активных турниров с айди, организаторами и статусом регистрации.
 @dp.message_handler(Text(startswith=['! турниры'], ignore_case=True),content_types=ContentType.TEXT,is_forwarded=False)
 async def check_turs(message: types.Message):
     connection = sqlite3.connect(tur_path)
@@ -159,6 +165,8 @@ async def check_turs(message: types.Message):
         await message.answer('Активные туриниры чата отсутвуют')
 
 
+#? EN: Allows the organizer to edit tournament fields (name, participants, teams, registration type, date, rules, comments).
+#* RU: Позволяет организатору менять поля турнира (название, участников, команды, тип регистрации, дату, правила, комментарии).
 @dp.message_handler(Text(startswith=['+тур'], ignore_case=True),content_types=ContentType.TEXT,is_forwarded=False)
 async def create_tur_dann(message: types.Message):
     connection = sqlite3.connect(tur_path)
@@ -229,6 +237,8 @@ async def create_tur_dann(message: types.Message):
         connection.commit()
         await message.answer('✅ Обновлено')
 
+#? EN: Unregisters a whole team from a tournament where the caller is listed as responsible (отв).
+#* RU: Отменяет регистрацию команды в турнире, где вызывающий указан как ответственный (отв).
 @dp.message_handler(Text(startswith=['! анрег команду'], ignore_case=True),content_types=ContentType.TEXT,is_forwarded=False)
 async def check_tur(message: types.Message):
     connection = sqlite3.connect(tur_path)
@@ -256,6 +266,8 @@ async def check_tur(message: types.Message):
     connection.commit()
     await message.answer('Команда удалена')
 
+#? EN: Shows full detailed info about a specific tournament by its ID.
+#* RU: Показывает полную подробную информацию о конкретном турнире по его айди.
 @dp.message_handler(Text(startswith=['! турнир', '. турнир'], ignore_case=True),content_types=ContentType.TEXT,is_forwarded=False)
 async def check_tur(message: types.Message):
     connection = sqlite3.connect(tur_path)
@@ -306,6 +318,8 @@ async def check_tur(message: types.Message):
 
     await message.answer(text='\n\n'.join(itog), parse_mode=ParseMode.HTML)
 
+#? EN: Registers a team for a tournament in manual mode by parsing a formatted list of players and leader (отв).
+#* RU: Регистрирует команду на турнир при ручной регистрации, разбирая форматированный список игроков и отв.
 @dp.message_handler(Text(startswith=['! рег команду', '! рег команды'], ignore_case=True), content_types=ContentType.TEXT,is_forwarded=False)
 async def check_tur(message: types.Message):
     connection = sqlite3.connect(tur_path)
@@ -529,6 +543,8 @@ async def check_tur(message: types.Message):
 
     await message.answer(text=f'✅ Команда зарегестрированна', parse_mode=ParseMode.HTML)
 
+#? EN: Registers the calling user as a participant in the given tournament (single-player registration).
+#* RU: Регистрирует вызывающего пользователя как участника указанного турнира (личная регистрация).
 @dp.message_handler(Text(startswith=['! рег'], ignore_case=True),content_types=ContentType.TEXT,is_forwarded=False)
 async def check_tur(message: types.Message):
     connection = sqlite3.connect(tur_path)
@@ -564,6 +580,8 @@ async def check_tur(message: types.Message):
         connection.commit()
     await message.answer('✅ Ты зарегестрирован')
 
+#? EN: Organizer command to open registration for their tournament again.
+#* RU: Команда организатора, чтобы снова открыть регистрацию на его турнир.
 @dp.message_handler(Text(startswith=['! открыть рег'], ignore_case=True),content_types=ContentType.TEXT,is_forwarded=False)
 async def check_tur(message: types.Message):
     connection = sqlite3.connect(tur_path)
@@ -590,6 +608,8 @@ async def check_tur(message: types.Message):
     cursor.execute('UPDATE information SET can_reg = ? WHERE id = ?', ('yes', id_tur))
     connection.commit()
 
+#? EN: Organizer command to close registration for their tournament.
+#* RU: Команда организатора, чтобы закрыть регистрацию на свой турнир.
 @dp.message_handler(Text(startswith=['! закрыть рег'], ignore_case=True),content_types=ContentType.TEXT,is_forwarded=False)
 async def check_tur(message: types.Message):
     connection = sqlite3.connect(tur_path)
@@ -617,6 +637,8 @@ async def check_tur(message: types.Message):
     connection.commit()
 
 
+#? EN: Unregisters the calling user from a tournament and removes their team row if needed.
+#* RU: Снимает вызывающего пользователя с турнира и при необходимости удаляет его команду.
 @dp.message_handler(Text(startswith=['! анрег'], ignore_case=True),content_types=ContentType.TEXT,is_forwarded=False)
 async def check_tur(message: types.Message):
     connection = sqlite3.connect(tur_path)
@@ -643,6 +665,8 @@ async def check_tur(message: types.Message):
         await message.answer('🗓 Ты не зарегестрирован на этот турнир')
         return
 
+#? EN: Shows the list of participants of a tournament with their statuses (организатор/участник).
+#* RU: Показывает список участников турнира с их статусами (организатор/участник).
 @dp.message_handler(Text(startswith=['! тур участники'], ignore_case=True),content_types=ContentType.TEXT,is_forwarded=False)
 async def check_tur(message: types.Message):
     connection = sqlite3.connect(tur_path)
@@ -678,6 +702,8 @@ async def check_tur(message: types.Message):
     a ='\n\n'.join(itog)
     await message.answer(text=f'🗓 <b>Участники турнира</b>\n\n{a}', parse_mode=ParseMode.HTML)
 
+#? EN: Shows all registered teams in a tournament and their composition.
+#* RU: Показывает все зарегистрированные команды турнира и их состав.
 @dp.message_handler(Text(startswith=['! тур команды'], ignore_case=True),content_types=ContentType.TEXT,is_forwarded=False)
 async def check_tur_cmd(message: types.Message):
 
@@ -715,6 +741,8 @@ async def check_tur_cmd(message: types.Message):
     itog_txt = '\n\n'.join(itog)
     await message.answer(text=itog_txt, parse_mode=ParseMode.HTML)
 
+#? EN: Shows the current win statistics per team (leader) in a tournament by its ID.
+#* RU: Показывает текущую статистику побед по командам (отв) в турнире по его айди.
 @dp.message_handler(Text(startswith=['! вины'], ignore_case=True),content_types=ContentType.TEXT,is_forwarded=False)
 async def start_tur(message: types.Message):
     connection = sqlite3.connect(tur_path)
@@ -746,6 +774,8 @@ async def start_tur(message: types.Message):
     await message.answer('\n\n'.join(itof), parse_mode='html')
 
 
+#? EN: Randomly distributes all registered users of a tournament into teams of configured size.
+#* RU: Случайным образом распределяет всех зарегистрированных участников турнира по командам нужного размера.
 @dp.message_handler(Text(startswith=['! распределить команды'], ignore_case=True),content_types=ContentType.TEXT,is_forwarded=False)
 async def respredel_tur_cmd(message: types.Message):
 
@@ -827,6 +857,8 @@ async def respredel_tur_cmd(message: types.Message):
 
     await message.answer(f'📝 Команды перераспределены рандомно \n\n💬<i> Посмотреть список команд мэтого турнира можно по команде</i> «<code>! тур команды {id_tur}</code>»', parse_mode=ParseMode.HTML)
 
+#? EN: Callback handler for confirming or canceling tournament deletion via inline buttons.
+#* RU: Обработчик колбэков для подтверждения или отмены удаления турнира через инлайн‑кнопки.
 @dp.callback_query_handler(Text(startswith=['yes_dell', 'otmena'], ignore_case=True))
 async def successful_recom(call: types.CallbackQuery):
     if call.data.split('-')[0] == 'yes_dell':
@@ -842,6 +874,8 @@ async def successful_recom(call: types.CallbackQuery):
             return
         await call.message.edit_text('❌Отменено')
 
+#? EN: Starts the tournament, closes registration, and mentions all participants in the chat.
+#* RU: Запускает турнир, закрывает регистрацию и упоминает всех участников в чате.
 @dp.message_handler(Text(startswith=['! начать турнир'], ignore_case=True),content_types=ContentType.TEXT,is_forwarded=False)
 async def start_tur(message: types.Message):
     connection = sqlite3.connect(tur_path)
@@ -890,6 +924,8 @@ async def start_tur(message: types.Message):
         await message.answer('📝У тебя нет зарегестрированых турниров!\n\n💬 <i>Создать турнир можно по команде <code>+турнир\n{название турнира}</code></i>', parse_mode=ParseMode.HTML)
         return
 
+#? EN: Adds a win point to a specific team (leader) in the organizer's tournament.
+#* RU: Добавляет очко победы конкретной команде (отв) в турнире организатора.
 @dp.message_handler(Text(startswith=['! вин'], ignore_case=True),content_types=ContentType.TEXT,is_forwarded=False)
 async def start_tur(message: types.Message):
     connection = sqlite3.connect(tur_path)
@@ -941,7 +977,11 @@ async def start_tur(message: types.Message):
         cursor.execute('INSERT INTO wins (tur, otv, count, is_winer) VALUES (?, ?, ?, ?)', (id_tur, otv, 1, 'False'))
         connection.commit()
 
+#? EN: Finishes the tournament, announces the winning team, and cleans up all tournament data.
+#* RU: Завершает турнир, объявляет команду-победителя и удаляет все данные турнира.
 @dp.message_handler(Text(startswith=['! закончить турнир'], ignore_case=True),content_types=ContentType.TEXT,is_forwarded=False)
+
+
 async def start_tur(message: types.Message):
     connection = sqlite3.connect(tur_path)
     cursor = connection.cursor()

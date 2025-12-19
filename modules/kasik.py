@@ -26,6 +26,8 @@ kasik_path = curent_path / 'databases' / 'kasik.db'
 
 
 
+#? EN: Opens the casino (slot/dice) interface, letting user choose a bet from their farm bag with cooldown.
+#* RU: Открывает интерфейс казика (слоты/кости), позволяя выбрать ставку из мешка фармы с кулдауном.
 @dp.message_handler(Text(startswith=['! казик', '!казик'], ignore_case=True))  # Снятие преда
 async def kasik(message: types.Message):
     connection = sqlite3.connect(main_path, check_same_thread=False)
@@ -129,6 +131,8 @@ async def kasik(message: types.Message):
     connection.commit()
 
 
+#? EN: Increases the casino bet by 1000 eZ¢ (if user has enough coins).
+#* RU: Увеличивает ставку в казике на 1000 eZ¢ (если у пользователя хватает монет).
 @dp.callback_query_handler(text = 'plus1')
 async def plus(call: types.CallbackQuery):
     connection = sqlite3.connect(main_path, check_same_thread=False)
@@ -162,6 +166,8 @@ async def plus(call: types.CallbackQuery):
     await call.message.edit_caption(caption=f'💰 В твоем мешке: 🍊 {meshok}  eZ¢\nТвоя ставка: {stavka+1000}', parse_mode='html', reply_markup=keyboard)
 
 
+#? EN: Decreases the casino bet by 1000 eZ¢ but not below the minimum (100).
+#* RU: Уменьшает ставку в казике на 1000 eZ¢, но не ниже минимальной (100).
 @dp.callback_query_handler(text = 'minus1')
 async def minus(call: types.CallbackQuery):
     connection = sqlite3.connect(main_path, check_same_thread=False)
@@ -194,6 +200,8 @@ async def minus(call: types.CallbackQuery):
 
     await call.message.edit_caption(caption=f'💰 В твоем мешке: 🍊 {meshok}  eZ¢\nТвоя ставка: {stavka-1000}', parse_mode='html', reply_markup=keyboard)
 
+#? EN: Increases the casino bet by 10 000 eZ¢ (big step).
+#* RU: Увеличивает ставку в казике на 10 000 eZ¢ (крупный шаг).
 @dp.callback_query_handler(text = 'plus5')
 async def plus(call: types.CallbackQuery):
     connection = sqlite3.connect(main_path, check_same_thread=False)
@@ -227,6 +235,8 @@ async def plus(call: types.CallbackQuery):
     await call.message.edit_caption(caption=f'💰 В твоем мешке: 🍊 {meshok}  eZ¢\nТвоя ставка: {stavka+10000}', parse_mode='html', reply_markup=keyboard)
 
 
+#? EN: Decreases the casino bet by 10 000 eZ¢ but not below 100.
+#* RU: Уменьшает ставку в казике на 10 000 eZ¢, но не ниже 100.
 @dp.callback_query_handler(text = 'minus5')
 async def minus(call: types.CallbackQuery):
     connection = sqlite3.connect(main_path, check_same_thread=False)
@@ -261,6 +271,8 @@ async def minus(call: types.CallbackQuery):
 
 
 
+#? EN: Increases the casino bet by 100 eZ¢ (small step).
+#* RU: Увеличивает ставку в казике на 100 eZ¢ (малый шаг).
 @dp.callback_query_handler(text = 'plus')
 async def plus(call: types.CallbackQuery):
     connection = sqlite3.connect(main_path, check_same_thread=False)
@@ -294,6 +306,8 @@ async def plus(call: types.CallbackQuery):
     await call.message.edit_caption(caption=f'💰 В твоем мешке: 🍊 {meshok}  eZ¢\nТвоя ставка: {stavka+100}', parse_mode='html', reply_markup=keyboard)
 
 
+#? EN: Decreases the casino bet by 100 eZ¢ but not below 100.
+#* RU: Уменьшает ставку в казике на 100 eZ¢, но не ниже 100.
 @dp.callback_query_handler(text = 'minus')
 async def minus(call: types.CallbackQuery):
     connection = sqlite3.connect(main_path, check_same_thread=False)
@@ -326,6 +340,8 @@ async def minus(call: types.CallbackQuery):
 
     await call.message.edit_caption(caption=f'💰 В твоем мешке: 🍊 {meshok}  eZ¢\nТвоя ставка: {stavka-100}', parse_mode='html', reply_markup=keyboard)
 
+#? EN: Sets the casino bet to the user’s entire bag balance (All-In).
+#* RU: Устанавливает ставку в казике равной всему балансу мешка пользователя (All-In).
 @dp.callback_query_handler(text = 'all_in')
 async def all_in(call: types.CallbackQuery):
     connection = sqlite3.connect(main_path, check_same_thread=False)
@@ -359,6 +375,8 @@ async def all_in(call: types.CallbackQuery):
         return
 
 
+#? EN: Rolls Telegram dice, resolves the casino game and updates user’s bag based on win/lose result.
+#* RU: Бросает телеграм‑кубик, определяет исход игры в казике и обновляет мешок пользователя по результату.
 @dp.callback_query_handler(text = 'dep')
 async def dep(call: types.CallbackQuery):
     connection = sqlite3.connect(main_path, check_same_thread=False)

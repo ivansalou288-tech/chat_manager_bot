@@ -17,15 +17,18 @@ from aiogram.utils.exceptions import MessageNotModified, BadRequest
 
 from main.config import *
 
+#? token="8451829699:AAE_tfApKWq3r82i0U7yD98RCcQPIMmMT1Q"
+#? api_id =21842840
+#? api_hash ="1db0b6e807c90e6364287ad8af7fa655"
+#? bot = Bot(token=token)
+#? dp = Dispatcher(bot)
 
-# token="8451829699:AAE_tfApKWq3r82i0U7yD98RCcQPIMmMT1Q"
-# api_id =21842840
-# api_hash ="1db0b6e807c90e6364287ad8af7fa655"
-# bot = Bot(token=token)
-# dp = Dispatcher(bot)
+#? EN: Duel expiration time in seconds
+#* RU: Время истечения дуэли в секундах
 DUEL_EXPIRES_SECONDS = 90
 
-
+#? EN: Data class representing a cubes duel between two players
+#* RU: Класс данных, представляющий дуэль на кубиках между двумя игроками
 @dataclass
 class _CubesDuel:
     duel_id: str
@@ -38,19 +41,24 @@ class _CubesDuel:
     created_at: float
     stake: int
 
+#? EN: Storage for pending duels
+#* RU: Хранилище ожидающих дуэлей
+_PENDING_BY_CHAT: dict[int, str] = {}   #? chat_id -> duel_id
+_PENDING_BY_ID: dict[str, _CubesDuel] = {}  #? duel_id -> duel
 
-_PENDING_BY_CHAT: dict[int, str] = {}   # chat_id -> duel_id
-_PENDING_BY_ID: dict[str, _CubesDuel] = {}  # duel_id -> duel
 
-
+#? EN: Creates HTML link to user
+#* RU: Создаёт HTML-ссылку на пользователя
 def _user_link(user_id: int, name: str) -> str:
     return f'<a href="tg://user?id={user_id}">{html.escape(name)}</a>'
 
-
+#? EN: Checks if duel has expired
+#* RU: Проверяет, истекла ли дуэль
 def _is_expired(duel: _CubesDuel) -> bool:
     return (time.monotonic() - duel.created_at) > DUEL_EXPIRES_SECONDS
 
-
+#? EN: Parses stake amount from command text
+#* RU: Извлекает размер ставки из текста команды
 def _parse_stake(text: str) -> Optional[int]:
     """
     Поддерживает:
@@ -80,6 +88,8 @@ def _parse_stake(text: str) -> Optional[int]:
         return None
 
 
+#? EN: Ensures user has a row in farma table and returns their meshok balance
+#* RU: Обеспечивает наличие записи пользователя в таблице farma и возвращает баланс мешка
 def _ensure_farma_row_and_get_meshok(cursor: sqlite3.Cursor, user_id: int) -> int:
     row = cursor.execute("SELECT meshok FROM farma WHERE user_id = ?", (user_id,)).fetchone()
     if row is None:
@@ -94,6 +104,8 @@ def _ensure_farma_row_and_get_meshok(cursor: sqlite3.Cursor, user_id: int) -> in
         return 0
 
 
+#? EN: Gets user's meshok balance from database
+#* RU: Получает баланс мешка пользователя из базы данных
 def _get_meshok(user_id: int) -> int:
     connection = sqlite3.connect(main_path, check_same_thread=False)
     cursor = connection.cursor()
@@ -108,6 +120,8 @@ def _get_meshok(user_id: int) -> int:
             pass
 
 
+#? EN: Expires a duel after timeout and updates the message
+#* RU: Завершает дуэль по истечении времени и обновляет сообщение
 async def _expire_duel_later(duel_id: str):
     await asyncio.sleep(DUEL_EXPIRES_SECONDS)
     duel = _PENDING_BY_ID.get(duel_id)
@@ -136,6 +150,8 @@ async def _expire_duel_later(duel_id: str):
         pass
 
 
+#? EN: Extracts opponent ID from message (reply or mention)
+#* RU: Извлекает ID противника из сообщения (ответ или упоминание)
 def _extract_opponent_id(message: types.Message) -> Optional[int]:
     if message.reply_to_message and message.reply_to_message.from_user:
         return int(message.reply_to_message.from_user.id)
@@ -148,6 +164,8 @@ def _extract_opponent_id(message: types.Message) -> Optional[int]:
     return None
 
 
+#? EN: Handles the "!кубы" command – creates a duel invite between two users with a configurable stake in eZ¢.
+#* RU: Обрабатывает команду «!кубы» – создаёт приглашение в дуэль на кубиках между двумя пользователями с настраиваемой ставкой в eZ¢.
 @dp.message_handler(Text(startswith=["! кубы", "!кубы"], ignore_case=True))
 async def cubes_duel_invite(message: types.Message):
     connection = sqlite3.connect(main_path, check_same_thread=False)
@@ -248,6 +266,8 @@ async def cubes_duel_invite(message: types.Message):
     asyncio.create_task(_expire_duel_later(duel_id))
 
 
+#? EN: Accepts a cubes duel, checks both players’ balances, rolls dice and transfers the stake to the winner.
+#* RU: Принимает дуэль на кубиках, проверяет балансы обоих игроков, бросает кубики и переводит ставку победителю.
 @dp.callback_query_handler(lambda c: c.data and c.data.startswith("cubes_accept:"))
 async def cubes_duel_accept(call: types.CallbackQuery):
     duel_id = call.data.split(":", 1)[1]
@@ -402,6 +422,8 @@ async def cubes_duel_accept(call: types.CallbackQuery):
     )
 
 
+#? EN: Declines a cubes duel invite and cancels it for the chat.
+#* RU: Отклоняет приглашение на дуэль в кубики и отменяет его для чата.
 @dp.callback_query_handler(lambda c: c.data and c.data.startswith("cubes_decline:"))
 async def cubes_duel_decline(call: types.CallbackQuery):
     duel_id = call.data.split(":", 1)[1]

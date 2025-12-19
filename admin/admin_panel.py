@@ -2,6 +2,8 @@ from aiogram.utils.exceptions import MessageNotModified
 
 from admin_config import *
 
+#? EN: Checks if user has admin panel access permissions and redirects to admin panel
+#* RU: Проверяет, есть ли у пользователя права доступа к админ-панели и перенаправляет к админ-панели
 @dp.callback_query_handler(text="admn_panell_check")
 async def admn_panell_check(call: types.CallbackQuery):
     if call.from_user.id in can_admin_panel:
@@ -11,6 +13,8 @@ async def admn_panell_check(call: types.CallbackQuery):
         await bot.answer_callback_query(call.id, text='Тебе не доступна эта функция', show_alert=True)
         return
 
+#? EN: Shows the main admin panel with options to view users and chat permissions
+#* RU: Показывает главную админ-панель с опциями просмотра пользователей и разрешений чата
 @dp.callback_query_handler(text="admn_panel")
 async def admin_panel(call: types.CallbackQuery):
     print(call.from_user.id)
@@ -29,6 +33,8 @@ async def admin_panel(call: types.CallbackQuery):
     keyboard.add(*buttons)
     await call.message.edit_text( text="Админ панель", reply_markup=keyboard)
 
+#? EN: Shows menu for viewing command permissions (dk) in different chats
+#* RU: Показывает меню для просмотра разрешений команд (дк) в разных чатах
 @dp.callback_query_handler(text="dk")
 async def users_chack(call: types.CallbackQuery):
     buttons = [
@@ -43,6 +49,8 @@ async def users_chack(call: types.CallbackQuery):
     await call.message.edit_text( text="Дк чатов", reply_markup=keyboard)
 
 
+#? EN: Shows menu for viewing users in different chats (clan, squad 1, squad 2)
+#* RU: Показывает меню для просмотра пользователей в разных чатах (клан, 1-й состав, 2-й состав)
 @dp.callback_query_handler(text="users")
 async def users_chack(call: types.CallbackQuery):
     buttons = [
@@ -57,6 +65,8 @@ async def users_chack(call: types.CallbackQuery):
     keyboard.add(*buttons)
     await call.message.edit_text( text="Юзеры чатов", reply_markup=keyboard)
 
+#? EN: Handles dynamic callbacks for viewing users or command permissions in specific chats
+#* RU: Обрабатывает динамические колбэки для просмотра пользователей или разрешений команд в конкретных чатах
 @dp.callback_query_handler()
 async def dk_in_chat(call):
 

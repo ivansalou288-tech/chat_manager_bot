@@ -86,6 +86,8 @@ async def _pick_random_user_from_db(chat_id: int) -> tuple[int, str | None, str 
     return int(tg_id), (username or None), (name or None), (nik or None)
 
 
+#? EN: Fun command that picks a user (reply or random from chat DB) and posts a humorous accusation about them.
+#* RU: Развлекательная команда, которая выбирает пользователя (ответ или случайный из базы чата) и отправляет шуточное обвинение в его адрес.
 @dp.message_handler(
     Text(startswith=["обвинение", "!обвинение", "! обвинение", ".обвинение", "/обвинение"], ignore_case=True),
     content_types=ContentType.TEXT,

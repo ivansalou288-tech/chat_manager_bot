@@ -20,6 +20,8 @@ from modules.obvinenie import *
 from modules.rus_rulet import *
 from modules.golden_rulet import *
 
+#? EN: Handles the "successful_recom1" callback and saves a prepared recommendation from temp storage to the main table.
+#* RU: Обрабатывает колбэк «successful_recom1» и сохраняет подготовленную рекомендацию из временного хранилища в основную таблицу.
 @dp.callback_query_handler(text="successful_recom1")
 async def successful_recom1(call: types.CallbackQuery):
     if call.from_user.id not in can_recommend_users:
@@ -46,6 +48,8 @@ async def successful_recom1(call: types.CallbackQuery):
     connection.commit()
 
 
+#? EN: Handles the "not_successful_user1" callback and simply cancels the recommendation creation.
+#* RU: Обрабатывает колбэк «not_successful_user1» и просто отменяет создание рекомендации.
 @dp.callback_query_handler(text="not_successful_user1")
 async def successful_recom1(call: types.CallbackQuery):
     if call.from_user.id not in can_recommend_users:
@@ -53,6 +57,8 @@ async def successful_recom1(call: types.CallbackQuery):
         return
     await call.message.edit_text('❌Отменено')
 
+#? EN: Handles /start and /help commands in private chat, shows basic info, clan status and main navigation buttons.
+#* RU: Обрабатывает команды /start и /help в личных сообщениях, показывает основную информацию, статус в клане и основные кнопки навигации.
 @dp.message_handler(commands=['start', 'help'])
 async def start(message):
     if message.chat.id != message.from_user.id:
@@ -79,12 +85,16 @@ async def start(message):
 
     await bot.send_photo(message.chat.id,photo=open(f'{curent_path}/photos/klan_ava.jpg', 'rb'), caption=f'Приветсвуем тебя в <b>WERTY | Чат-менеджер</b>\n\n{is_in_klan}\n\nЧто ты хочешь сделать?', parse_mode='html',reply_markup=keyboard)
 
+#? EN: Sends the full list of chat commands when user presses the "commands" inline button.
+#* RU: Отправляет полный список команд чата, когда пользователь нажимает инлайн‑кнопку «commands».
 @dp.callback_query_handler(text="commands")
 async def successful_recom1(call: types.CallbackQuery):
     text = cursor.execute('SELECT text FROM texts WHERE text_name = ?', ('commands',)).fetchall()[0][0]
     await bot.send_message(call.from_user.id, f'🗓<b>Список команд чата:</b>\n\n{text}', parse_mode=ParseMode.HTML, disable_web_page_preview=True)
     await bot.answer_callback_query(call.id, text='')
 
+#? EN: Shows the list of currently muted users in the chat when user sends the "муты" command.
+#* RU: Показывает список текущих замьюченных пользователей в чате при вводе команды «муты».
 @dp.message_handler(Text(startswith=["муты"], ignore_case=True), content_types=ContentType.TEXT,is_forwarded=False)  # * Функция размута
 async def mutes_check(message):
     if len(message.text.split()[0]) != 4:
@@ -140,6 +150,8 @@ async def mutes_check(message):
                          parse_mode=ParseMode.HTML)
 
 
+#? EN: Mutes a user in the chat for a specified time with a reason; works only for allowed moderators.
+#* RU: Замьючивает пользователя в чате на заданное время с указанием причины; доступно только разрешённым модераторам.
 @dp.message_handler(Text(startswith='мут', ignore_case=True), content_types=ContentType.TEXT,is_forwarded=False)  # * Мут
 async def mute(message):
     global klan, is_auto_unmute
@@ -274,6 +286,8 @@ async def mute(message):
         return
 
 
+#? EN: Unmutes a user in the chat, returning them the ability to write messages.
+#* RU: Размьючивает пользователя в чате, возвращая ему возможность писать сообщения.
 @dp.message_handler(Text(startswith=['анмут', "размут"], ignore_case=True),
                     content_types=ContentType.TEXT,is_forwarded=False)  # * Функция размута
 async def unmute(message):
@@ -334,6 +348,8 @@ async def unmute(message):
     connection.commit()
 
 
+#? EN: Permanently bans a user from the chat with a specified reason; only for moderators with sufficient rank.
+#* RU: Навсегда банит пользователя в чате с указанием причины; доступно только модераторам с достаточным рангом.
 @dp.message_handler(Text(startswith='бан', ignore_case=True), content_types=ContentType.TEXT,is_forwarded=False)  # * Функция бана
 async def ban(message):
     if len(message.text.split()[0]) != 3:
@@ -404,6 +420,8 @@ async def ban(message):
             parse_mode='html')
 
 
+#? EN: Shows detailed information about why a user was banned (reason, date, moderator, PUBG ID, and link to the message).
+#* RU: Показывает подробную информацию о причине бана пользователя (причина, дата, модератор, PUBG ID и ссылка на сообщение).
 @dp.message_handler(Text(startswith='причина бана', ignore_case=True), content_types=ContentType.TEXT,is_forwarded=False)  # * Функция бана
 async def prich_ban(message):
     if len(message.text.split()[1]) != 4:
@@ -438,6 +456,8 @@ async def prich_ban(message):
         parse_mode='html')
 
 
+#? EN: Unbans a user in the chat without sending them an invite link, just removes the permanent ban.
+#* RU: Разбанивает пользователя в чате без отправки ссылки-приглашения, просто снимает перманентный бан.
 @dp.message_handler(Text(startswith='разбан', ignore_case=True), content_types=ContentType.TEXT,is_forwarded=False)  # * Функция разбана
 async def unban(message):
     if len(message.text.split()[0]) != 6:
@@ -487,6 +507,8 @@ async def unban(message):
         parse_mode='html')
 
 
+#? EN: Unbans a user and tries to send them an invite link to return to the chat.
+#* RU: Разбанивает пользователя и пытается отправить ему ссылку-приглашение для возвращения в чат.
 @dp.message_handler(Text(startswith='вернуть', ignore_case=True), content_types=ContentType.TEXT,
                     is_forwarded=False)  # * Функция вернуть
 async def returner(message):
@@ -541,6 +563,8 @@ async def returner(message):
     await message.reply( f' ✅ Пользователь <a href="tg://user?id={user_id}">{name_user}</a> разбанен\n👮‍♂️Помиловал его: {moder_link}\n\n💬<a href="tg://user?id={user_id}">{name_user}</a>, и получил сообщение о приглашение!', parse_mode='html')
 
 
+#? EN: Kicks a user from the chat (without permanent ban) with an optional reason; they can rejoin later.
+#* RU: Кикает пользователя из чата (без перманентного бана) с необязательной причиной; он может вернуться позже.
 @dp.message_handler(Text(startswith='кик', ignore_case=True), content_types=ContentType.TEXT,is_forwarded=False)  # * Функция кика
 async def kick(message):
     if len(message.text.split()[0]) != 3:
@@ -590,11 +614,15 @@ async def kick(message):
             parse_mode='html')
 
 
+#? EN: Replies with the current chat ID (useful for configuration and admin purposes).
+#* RU: Отвечает айди текущего чата (удобно для настроек и админских задач).
 @dp.message_handler(commands=["id"], content_types=ContentType.TEXT,is_forwarded=False)  # * Функция узнавания айди чата
 async def id_chat(message):
     await message.reply(f'айди чата "<code>{message.chat.id}</code>"', parse_mode='html')
 
 
+#? EN: Simple latency check; when user sends "пинг", bot answers "ПОНГ" if command is correct.
+#* RU: Простая проверка отклика; когда пользователь пишет «пинг», бот отвечает «ПОНГ» при корректной команде.
 @dp.message_handler(Text(startswith="пинг", ignore_case=True),
                     content_types=ContentType.TEXT,is_forwarded=False)  # * проверка работоспособности бота
 async def ping(message):
@@ -606,6 +634,8 @@ async def ping(message):
         await message.reply("ПОНГ")
 
 
+#? EN: Checks that the bot is alive; on "бот" without extra text replies that the bot is online.
+#* RU: Проверяет, что бот работает; на «бот» без лишнего текста отвечает, что бот на месте.
 @dp.message_handler(Text(startswith="бот", ignore_case=True),
                     content_types=ContentType.TEXT,is_forwarded=False)  # * проверка работоспособности бота
 async def bot_check(message):
@@ -617,6 +647,8 @@ async def bot_check(message):
         await message.reply("✅Бот на месте")
 
 
+#? EN: Assigns a random "article" (fun punishment) to the user once per day and remembers it in the database.
+#* RU: Присваивает пользователю случайную «статью» (шутливое наказание) один раз в день и запоминает её в базе.
 @dp.message_handler(Text(startswith=['моя статья'], ignore_case=True), content_types=ContentType.TEXT,is_forwarded=False)
 async def vagn_abavlenie(message):
     connection = sqlite3.connect(main_path, check_same_thread=False)
@@ -646,6 +678,8 @@ async def vagn_abavlenie(message):
         connection.commit()
         await message.reply(f'🤷‍♂️ Сегодня {men} уже приговаривался к статье {text}', parse_mode = 'html')
     connection.commit()
+#? EN: Enables automatic posting of reminder messages to the "замы" group if not already enabled.
+#* RU: Включает автопостинг напоминаний в группу «замы», если он ещё не активирован.
 @dp.message_handler(Text(startswith='Постинг', ignore_case=True),
                     content_types=ContentType.TEXT,is_forwarded=False)  # * Постинг напоминание в группу "замы"
 async def check_posting(message):
@@ -657,6 +691,8 @@ async def check_posting(message):
         await message.reply(text="Автопостинг напоминаний активирован")
         await shedul_posting(message)
 
+#? EN: Mentions all admins/overseers in the chat to gather them, optionally with an announcement text.
+#* RU: Созывает всех админов/ответственных в чате, отмечая их и при необходимости добавляя объявление.
 @dp.message_handler(Text(startswith=['созвать админов', 'созвать отв'], ignore_case=True), content_types=ContentType.TEXT,is_forwarded=False)
 async def admn_sbor(message):
     connection = sqlite3.connect(main_path)
@@ -693,6 +729,8 @@ async def admn_sbor(message):
             await message.reply(f'<b>⬆️Созват{a}ь Админов ({(r // 6) + 1})</b>', parse_mode='html')
             a = ''
 
+#? EN: Organizes a general gathering for all chat members, formatting and validating the announcement text.
+#* RU: Организует общий сбор для всех участников чата, проверяя и красиво оформляя текст объявления.
 @dp.message_handler(Text(startswith=['созыв', 'созвать', 'общий сбор'], ignore_case=True),
                     content_types=ContentType.TEXT,is_forwarded=False)  # * Общий сбор
 async def all_sbor(message):
@@ -768,6 +806,8 @@ async def all_sbor(message):
             a = ''
 
 
+#? EN: Shows active warnings (warns) for yourself or another user in this chat.
+#* RU: Показывает активные предупреждения (варны) для себя или другого пользователя в этом чате.
 @dp.message_handler(Text(startswith=["преды", 'варны'], ignore_case=True),
                     content_types=ContentType.TEXT,is_forwarded=False)  # * Просмотр варнов своих и другово пользователя
 async def warns_check(message: types.Message):
@@ -795,6 +835,8 @@ async def warns_check(message: types.Message):
     await message.reply(text, parse_mode='html')
 
 
+#? EN: Issues a new warning to a user with a reason, increases their warn counter and may auto-punish at 3 warns.
+#* RU: Выдаёт пользователю новое предупреждение с указанием причины, увеличивает счётчик варнов и может автонаказать при трёх предупреждениях.
 @dp.message_handler(Text(startswith=['пред', 'варн'], ignore_case=True), content_types=ContentType.TEXT,is_forwarded=False)  # * Выдача преда
 async def warnUser(message: types.Message):
     if len(message.text.split()[0]) != 4:
@@ -875,6 +917,8 @@ async def warnUser(message: types.Message):
         await limit_warns(message)
 
 
+#? EN: Removes a specific warning from a user (by warn number 1–3) and updates the warn counter.
+#* RU: Снимает конкретное предупреждение с пользователя (по номеру 1–3) и обновляет счётчик варнов.
 @dp.message_handler(Text(startswith=['снять пред', 'снять варн'], ignore_case=True),
                     content_types=ContentType.TEXT,is_forwarded=False)  # * Снятие преда
 async def snat_warnUser(message: types.Message):
@@ -971,6 +1015,8 @@ async def snat_warnUser(message: types.Message):
     connection.close()
 
 
+#? EN: Shows a paginated list of all removed warnings for a user, sent in private messages.
+#* RU: Показывает постраничный список всех снятых предупреждений пользователя, отправляя его в личные сообщения.
 @dp.message_handler(Text(startswith=['снятые преды', 'снятые варны'], ignore_case=True))  # * Снятые преды
 async def snatie_warnUser(message: types.Message):
     global page, mes_id, itog, page_c
@@ -1057,6 +1103,8 @@ async def snatie_warnUser(message: types.Message):
         parse_mode=ParseMode.HTML, disable_web_page_preview=True)
 
 
+#? EN: Handles the "back" button in the removed-warns pagination, going to the previous page.
+#* RU: Обрабатывает кнопку «◀️» в пагинации снятых предупреждений, переходя на предыдущую страницу.
 @dp.callback_query_handler(text="back")
 async def successful_recom(call: types.CallbackQuery):
     global page, page_c
@@ -1087,6 +1135,8 @@ async def successful_recom(call: types.CallbackQuery):
         return
 
 
+#? EN: Handles the "next" button in the removed-warns pagination, going to the next page.
+#* RU: Обрабатывает кнопку «▶️» в пагинации снятых предупреждений, переходя на следующую страницу.
 @dp.callback_query_handler(text="next")
 async def successful_recom(call: types.CallbackQuery):
     global page, page_c
@@ -1117,6 +1167,8 @@ async def successful_recom(call: types.CallbackQuery):
         pass
 
 
+#? EN: Promotes a user to a higher moderator rank in the chat if the caller has enough rights.
+#* RU: Повышает пользователя до более высокого ранга модератора в чате, если вызывающий имеет достаточно прав.
 @dp.message_handler(Text(startswith="повысить", ignore_case=True),
                     content_types=ContentType.TEXT,is_forwarded=False)  # * повысить пользователя
 async def rang_up(message: types.Message):
@@ -1197,6 +1249,8 @@ async def rang_up(message: types.Message):
     connection.close()
 
 
+#? EN: Demotes a user's moderator rank in the chat to a lower level, with safety checks on allowed range.
+#* RU: Понижает ранг модератора пользователя в чате до более низкого уровня, с проверками допустимого диапазона.
 @dp.message_handler(Text(startswith=["понизить", "занизить"], ignore_case=True),
                     content_types=ContentType.TEXT,is_forwarded=False)  # * понизить пользователя
 async def rang_down(message: types.Message):
@@ -1277,6 +1331,8 @@ async def rang_down(message: types.Message):
     connection.close()
 
 
+#? EN: Completely strips a user of moderator rights in the chat (sets their rank to 0).
+#* RU: Полностью снимает с пользователя права модератора в чате (устанавливает ранг 0).
 @dp.message_handler(Text(startswith=["снять", "разжаловать"], ignore_case=True),
                     content_types=ContentType.TEXT,is_forwarded=False)  # * снять пользователя с поста модератора
 async def rang_snat(message: types.Message):
@@ -1339,6 +1395,8 @@ async def rang_snat(message: types.Message):
     connection.close()
 
 
+#? EN: Shows a detailed profile/description of the user (PUBG ID, rank, etc.) and gives a copy button for PUBG ID.
+#* RU: Показывает подробное описание пользователя (PUBG ID, ранг и т.д.) и даёт кнопку для копирования PUBG ID.
 @dp.message_handler(Text(startswith="описание", ignore_case=True),
                     content_types=ContentType.TEXT,is_forwarded=False)  # * просмтр описания пользователя
 async def about_user(message: types.Message):
@@ -1402,6 +1460,8 @@ async def about_user(message: types.Message):
                             parse_mode="html")
 
 
+#? EN: Closes the chat for regular users (read-only) and shows a button to reopen it.
+#* RU: Закрывает чат для обычных пользователей (только чтение) и выводит кнопку для повторного открытия.
 @dp.message_handler(Text(startswith="-чат", ignore_case=True), content_types=ContentType.TEXT,is_forwarded=False)  # * закрыть чат
 async def minus_chat(message):
     if len(message.text.split()[0]) != 4:
@@ -1432,6 +1492,8 @@ async def minus_chat(message):
         reply_markup=keyboard, parse_mode="HTML")
 
 
+#? EN: Deletes a replied message and the command message, used by moderators to clean up single messages.
+#* RU: Удаляет отвеченное сообщение и команду, используется модераторами для точечной очистки сообщений.
 @dp.message_handler(Text(startswith="-смс", ignore_case=True), content_types=ContentType.TEXT,is_forwarded=False)  # * закрыть чат
 async def minus_chat(message):
     if len(message.text.split()[0]) != 4:
@@ -1463,6 +1525,8 @@ async def minus_chat(message):
         await message.answer('Не могу удалить сообщение т.к у меня нет таких прав')
 
 
+#? EN: Reopens the chat for all members, restoring full send permissions.
+#* RU: Открывает чат для всех участников, возвращая полные права на отправку сообщений.
 @dp.message_handler(Text(startswith="+чат", ignore_case=True), content_types=ContentType.TEXT,is_forwarded=False)  # * открыть чат
 async def open_chat(message):
     moder_id = message.from_user.id
@@ -1492,6 +1556,8 @@ async def open_chat(message):
                         parse_mode="HTML")
 
 
+#? EN: Handles the inline "open chat" button and reopens the chat if the user has enough rights.
+#* RU: Обрабатывает инлайн‑кнопку «Открыть чат» и открывает чат, если у пользователя достаточно прав.
 @dp.callback_query_handler(text='open_chat')  # * * обработчик открытия чата
 async def open_chat_button(call):
     moder_id = call.from_user.id
@@ -1517,6 +1583,8 @@ async def open_chat_button(call):
                            parse_mode="HTML")
 
 
+#? EN: Shows a grouped list of chat admins by rank (owner, manager, deputies, etc.) with fun icons.
+#* RU: Показывает сгруппированный по рангам список админов чата (владелец, менеджер, замы и т.д.) с веселыми иконками.
 @dp.message_handler(Text(startswith='кто админ', ignore_case=True),
                     content_types=ContentType.TEXT,is_forwarded=False)  # * просмотр админов чата
 async def kto_admin(message):
@@ -1622,6 +1690,8 @@ async def kto_admin(message):
         await message.reply('Админов в этом чате нет')
 
 
+#? EN: Shows the saved custom nickname of a user in the chat, or warns if it is not set.
+#* RU: Показывает сохранённый кастомный ник пользователя в чате или сообщает, что он не задан.
 @dp.message_handler(Text(startswith='ник', ignore_case=True), content_types=ContentType.TEXT,is_forwarded=False)  # * просмотр ника
 async def nik(message):
     if len(message.text.split()[0]) != 3:
@@ -1658,6 +1728,8 @@ async def nik(message):
         await message.reply(f'🗓Ник <a href="tg://user?id={user_id}">пользователя</a>: «{nik}»', parse_mode="html")
 
 
+#? EN: Changes your chat nickname (display name in clan tables) within a length limit.
+#* RU: Изменяет твой ник в чате (отображаемое имя в клановых таблицах) с ограничением по длине.
 @dp.message_handler(Text(startswith='+ник', ignore_case=True), content_types=ContentType.TEXT,is_forwarded=False)  # * изменение ника
 async def plus_nik(message):
     if len(message.text.split()[0]) != 4:
@@ -1687,6 +1759,8 @@ async def plus_nik(message):
     connection.commit()
 
 
+#? EN: Updates your in‑game nickname (PUBG nick) in clan-related tables.
+#* RU: Обновляет твой игровой ник (PUBG ник) в клановых таблицах.
 @dp.message_handler(Text(startswith='+игровой ник', ignore_case=True), content_types=ContentType.TEXT,is_forwarded=False)  # * изменение ника
 async def plus_nik(message):
     if len(message.text.split()[1]) != 3:
@@ -1720,6 +1794,8 @@ async def plus_nik(message):
     connection.commit()
 
 
+#? EN: Updates your in‑game PUBG ID after validating its format (length and starting digit).
+#* RU: Обновляет твой игровой PUBG ID после проверки формата (длина и первая цифра).
 @dp.message_handler(Text(startswith='+игровой айди', ignore_case=True),
                     content_types=ContentType.TEXT,is_forwarded=False)  # * изменение ника
 async def plus_nik(message):
@@ -1765,6 +1841,8 @@ async def plus_nik(message):
     connection.commit()
 
 
+#? EN: Changes the minimum moderator rank required to use a specific command (mute, ban, etc.) in this chat.
+#* RU: Изменяет минимальный ранг модератора, с которого доступна конкретная команда (мут, бан и т.п.) в этом чате.
 @dp.message_handler(Text(startswith='дк', ignore_case=True),
                     content_types=ContentType.TEXT,is_forwarded=False)  # * изменение мигимального рангда команд
 async def dk(message):
@@ -1855,6 +1933,8 @@ async def dk(message):
         await message.reply(f'✅Команда «{command}» теперь доступна всем')
 
 
+#? EN: Shows current chat rules stored for this chat.
+#* RU: Показывает текущие правила чата, сохранённые для этого чата.
 @dp.message_handler(Text(startswith='правила', ignore_case=True), content_types=ContentType.TEXT,is_forwarded=False)  # * просмотр правил
 async def pravila(message):
     if len(message.text) != 7:
@@ -1873,6 +1953,8 @@ async def pravila(message):
     return text
 
 
+#? EN: Sets or updates the full text of chat rules (everything after the first line is stored).
+#* RU: Устанавливает или обновляет полный текст правил чата (всё после первой строки команды записывается).
 @dp.message_handler(Text(startswith='+правила', ignore_case=True),
                     content_types=ContentType.TEXT,is_forwarded=False)  # * изменение правил чата
 async def plus_pravila(message):
@@ -1909,6 +1991,8 @@ async def plus_pravila(message):
     await message.answer('✅ Правила чата обновлены')
 
 
+#? EN: Shows a full profile about yourself in this chat: status, description, warns, recommendations and activity.
+#* RU: Показывает полный профиль о себе в этом чате: статус, описание, предупреждения, рекомендации и активность.
 @dp.message_handler(Text(startswith="кто я", ignore_case=True), content_types=ContentType.TEXT,is_forwarded=False)
 async def all_about_self_user(message: types.Message):
     if len(message.text) != 5:
@@ -2039,6 +2123,8 @@ async def all_about_self_user(message: types.Message):
         await message.reply(itog_text, parse_mode=ParseMode.HTML)
 
 
+#? EN: Shows the same full profile as "кто я", but for another user mentioned or replied to.
+#* RU: Показывает такой же полный профиль, как «кто я», но для другого пользователя (упоминание или ответ).
 @dp.message_handler(Text(startswith="кто ты", ignore_case=True), content_types=ContentType.TEXT,is_forwarded=False)
 async def all_about_user(message: types.Message):
     print(len(message.text))
@@ -2176,6 +2262,8 @@ async def all_about_user(message: types.Message):
         await message.reply(itog_text, parse_mode=ParseMode.HTML)
 
 
+#? EN: Welcomes a new chat member, updates their usernames in clan tables and sends greeting + rules.
+#* RU: Приветствует нового участника, обновляет его username в клановых таблицах и отправляет приветствие и правила.
 @dp.message_handler(content_types=ContentType.NEW_CHAT_MEMBERS)  # * приветсвие нового участника
 async def new_chat_mem(message):
     new = message.new_chat_members[0]
@@ -2211,6 +2299,8 @@ async def new_chat_mem(message):
     await bot.send_message(message.chat.id, text, parse_mode='HTML')
 
 
+#? EN: Sets or updates the greeting text that is shown when new members join the chat.
+#* RU: Устанавливает или обновляет текст приветствия, который показывается новым участникам чата.
 @dp.message_handler(Text(startswith='+приветствие', ignore_case=True), content_types=ContentType.TEXT,is_forwarded=False)
 async def add_privetstvie(message):
     moder_id = message.from_user.id
@@ -2244,6 +2334,8 @@ async def add_privetstvie(message):
     await message.answer('✅ Приветствие новых пользователей обновлено')
 
 
+#? EN: Shows the current greeting text for new members in this chat.
+#* RU: Показывает текущий текст приветствия для новых участников этого чата.
 @dp.message_handler(Text(startswith='приветствие', ignore_case=True),
                     content_types=ContentType.TEXT,is_forwarded=False)  # * просмотр приветсвия
 async def privetstvie(message):
@@ -2267,6 +2359,8 @@ async def privetstvie(message):
         parse_mode='HTML')
 
 
+#? EN: One-time technical command to initialize all necessary tables for a new chat (for bot owner only).
+#* RU: Разовая техническая команда для инициализации всех нужных таблиц для нового чата (только для владельца бота).
 @dp.message_handler(Text(startswith='!Настройка', ignore_case=True), content_types=ContentType.TEXT,is_forwarded=False)
 async def set_new_chat(message):
     if message.chat.id == message.from_user.id:
@@ -2358,6 +2452,8 @@ async def set_new_chat(message):
     await message.reply('Чат готов к работе')
 
 
+#? EN: Changes the global "entry rules" text that is used when new users join (only for main admins via PM).
+#* RU: Изменяет общий текст «правил входа», который показывается новым пользователям (только для главных админов в ЛС).
 @dp.message_handler(Text(startswith='!изменить правила входа', ignore_case=True), content_types=ContentType.TEXT,is_forwarded=False)
 async def set_new_pravil_vhod(message):
     if message.chat.id != message.from_user.id:
@@ -2378,6 +2474,8 @@ async def set_new_pravil_vhod(message):
     await message.answer('✅ Правила для новых пользователей обновлено')
 
 
+#? EN: Shows the current global "entry rules" text for new users (admin PM command).
+#* RU: Показывает текущий глобальный текст «правил входа» для новых пользователей (админская команда в ЛС).
 @dp.message_handler(Text(startswith='!правила входа', ignore_case=True), content_types=ContentType.TEXT,is_forwarded=False)
 async def set_new_pravil_vhod(message):
     if message.chat.id != message.from_user.id:
@@ -2393,6 +2491,8 @@ async def set_new_pravil_vhod(message):
     await message.answer(text, parse_mode='html')
 
 
+#? EN: Technical command for the bot owner to change main chat IDs (clan, squad1, squad2, logs).
+#* RU: Техническая команда для владельца бота, чтобы изменить айди основных чатов (клан, составы, логи).
 @dp.message_handler(Text(startswith='!изменение чатов', ignore_case=True), content_types=ContentType.TEXT,is_forwarded=False)
 async def set_new_chat(message):
     if message.chat.id != message.from_user.id or message.from_user.id != 1240656726:
@@ -2455,6 +2555,8 @@ async def set_new_chat(message):
     await message.reply('Обновлено')
 
 
+#? EN: Shows all stored recommendations for the specified user (by @ or PUBG ID).
+#* RU: Показывает все сохранённые рекомендации для указанного пользователя (по @ или PUBG ID).
 @dp.message_handler(Text(startswith="Рекомендации", ignore_case=True))
 async def recom_check(message):
     if len(message.text.split()[0]) != 12:
@@ -2480,6 +2582,8 @@ async def recom_check(message):
     await message.reply(f'{text}', parse_mode='html')
 
 
+#? EN: Creates a new recommendation for a clan member with reason and target rank, only for allowed moderators.
+#* RU: Создаёт новую рекомендацию для участника клана с указанием причины и ранга, доступно только выбранным модераторам.
 @dp.message_handler(Text(startswith=['+рекомендация', 'рекомендовать'], ignore_case=True),
                     content_types=ContentType.TEXT,is_forwarded=False)
 async def add_recom(message):
@@ -2581,6 +2685,8 @@ async def add_recom(message):
 
 
 
+#? EN: Deletes an existing recommendation for a user, optionally specifying which moderator it was from.
+#* RU: Удаляет существующую рекомендацию пользователя, при необходимости указывая, от какого модератора.
 @dp.message_handler(Text(startswith=['-рекомендация'], ignore_case=True), content_types=ContentType.TEXT,is_forwarded=False)
 async def dell_recom(message):
     connection = sqlite3.connect(main_path, check_same_thread=False)
@@ -2667,6 +2773,8 @@ async def dell_recom(message):
     connection.commit()
 
 
+#? EN: Shows Telegram ID of a user (by @, reply, or yourself) in a copyable format.
+#* RU: Показывает Telegram ID пользователя (по @, ответу или себе) в удобном для копирования виде.
 @dp.message_handler(commands=['ид'], commands_prefix=['!', '.'])
 async def id_user_check(message: types.Message):
     connection = sqlite3.connect(main_path, check_same_thread=False)
@@ -2696,6 +2804,8 @@ async def id_user_check(message: types.Message):
         parse_mode='html', disable_web_page_preview=True)
 
 
+#? EN: Admin-only command to change the stored text of the chat commands list.
+#* RU: Админская команда для изменения сохранённого текста списка команд чата.
 @dp.message_handler(Text(startswith='!изменить список команд', ignore_case=True))
 async def id_user_check(message: types.Message):
     connection = sqlite3.connect(main_path, check_same_thread=False)
@@ -2708,6 +2818,8 @@ async def id_user_check(message: types.Message):
     connection.commit()
 
 
+#? EN: Sends the full raw commands list to the bot owner in private messages.
+#* RU: Отправляет полный сырой список команд владельцу бота в личные сообщения.
 @dp.message_handler(Text(startswith='!список команд_admin', ignore_case=True))
 async def id_user_check(message: types.Message):
     if message.from_user.id != 1240656726:
@@ -2721,6 +2833,8 @@ async def id_user_check(message: types.Message):
                          parse_mode=ParseMode.HTML, disable_web_page_preview=True)
 
 
+#? EN: Sends formatted commands list to the user in PM when called from a chat.
+#* RU: Отправляет оформленный список команд пользователю в ЛС при вызове из чата.
 @dp.message_handler(Text(startswith=['!команды', '! команды'], ignore_case=True))
 async def id_user_check(message: types.Message):
     connection = sqlite3.connect(main_path, check_same_thread=False)
@@ -2739,6 +2853,8 @@ async def id_user_check(message: types.Message):
                          parse_mode=ParseMode.HTML, disable_web_page_preview=True)
 
 
+#? EN: Allows quest admins to change the text of daily quests by number.
+#* RU: Позволяет квест-админам изменять текст ежедневных квестов по номеру.
 @dp.message_handler(commands=['квест'], commands_prefix='!')
 async def quest_change(message: types.Message):
     if message.from_user.id in [1803851598, 1240656726]:
@@ -2762,6 +2878,8 @@ async def quest_change(message: types.Message):
     await message.answer("✅ Изменено")
 
 
+#? EN: Starts a background loop that automatically unmutes users when their mute time expires.
+#* RU: Запускает фоновый цикл, автоматически размутивющий пользователей по истечении времени мута.
 @dp.message_handler(commands=['auto_unmute'])
 async def auto_unmute(message: types.Message):
     global is_auto_unmute
@@ -2808,6 +2926,8 @@ async def auto_unmute(message: types.Message):
             connection.close()
 
 
+#? EN: Background scheduler that sends daily quest messages to the clan chat at specific times and days.
+#* RU: Фоновый планировщик, который в нужное время и дни отправляет сообщения с квестами в клановый чат.
 async def quests_funk(message: types.Message):
     connection = sqlite3.connect(main_path, check_same_thread=False)
     cursor = connection.cursor()
