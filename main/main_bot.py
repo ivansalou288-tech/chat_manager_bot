@@ -21,7 +21,12 @@ from modules.rus_rulet import *
 from modules.golden_rulet import *
 from modules.who_is_who import *
 from modules.hot_cold import register_hot_cold_handlers
+from modules.bookmarks import BookmarkManager, register_bookmarks_handlers
+
+# Инициализация менеджера закладок
+bookmark_manager = BookmarkManager(data_dir=os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'databases'))
 register_hot_cold_handlers(dp)
+register_bookmarks_handlers(dp, bookmark_manager, bot)
 
 #? EN: Handles the "successful_recom1" callback and saves a prepared recommendation from temp storage to the main table.
 #* RU: Обрабатывает колбэк «successful_recom1» и сохраняет подготовленную рекомендацию из временного хранилища в основную таблицу.
