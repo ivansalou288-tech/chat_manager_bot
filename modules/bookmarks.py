@@ -28,6 +28,7 @@ class Bookmark:
     author_name: str
     description: str
     message_id: Optional[int] = None
+    chat_id: Optional[int] = None
     created_at: str = ""
     is_public: bool = True
     
@@ -82,7 +83,8 @@ class BookmarkManager:
             print(f"Ошибка при сохранении закладок: {e}")
     
     def create_bookmark(self, title: str, author_id: int, author_name: str, 
-                       description: str, message_id: Optional[int] = None) -> Bookmark:
+                       description: str, message_id: Optional[int] = None, 
+                       chat_id: Optional[int] = None) -> Bookmark:
         """
         Создать новую закладку
         
@@ -92,6 +94,7 @@ class BookmarkManager:
             author_name: Имя автора закладки
             description: Описание/содержание закладки
             message_id: ID сообщения, на которое указывает закладка (опционально)
+            chat_id: ID чата, где расположено сообщение (опционально)
         
         Returns:
             Созданная закладка
@@ -102,7 +105,8 @@ class BookmarkManager:
             author_id=author_id,
             author_name=author_name,
             description=description,
-            message_id=message_id
+            message_id=message_id,
+            chat_id=chat_id
         )
         self.bookmarks[self.next_id] = bookmark
         self.next_id += 1
@@ -243,10 +247,38 @@ class BookmarkManager:
         """
         id_str = f"#{bookmark.id} " if include_id else ""
         date_str = bookmark.created_at.split('T')[0]
-        return (f"{id_str}📌 <b>{bookmark.title}</b>\n"
+        text = (f"{id_str}📌 <b>{bookmark.title}</b>\n"
                 f"👤 Автор: {bookmark.author_name}\n"
                 f"📅 {date_str}\n"
                 f"📝 {bookmark.description}")
+        
+        # Добавляем информацию о ссылке на сообщение если оно есть
+        if bookmark.message_id and bookmark.chat_id:
+            text += f"\n🔗 <i>Ссылка на сообщение доступна</i>"
+        
+        return text
+    
+    def get_message_link(self, bookmark: Bookmark) -> Optional[str]:
+        """
+        Получить Telegram deep link на сообщение
+        
+        Args:
+            bookmark: Закладка
+        
+        Returns:
+            URL для перехода к сообщению или None
+        """
+        if not bookmark.message_id or not bookmark.chat_id:
+            return None
+        
+        # Если это групповой чат (отрицательное ID)
+        if bookmark.chat_id < 0:
+            # Преобразуем ID для group link
+            chat_id = str(bookmark.chat_id).replace('-', '')
+            return f"https://t.me/c/{chat_id}/{bookmark.message_id}"
+        else:
+            # Для личных сообщений
+            return f"tg://openmessage?chat_id={bookmark.chat_id}&message_id={bookmark.message_id}"
     
     def format_bookmarks_list(self, bookmarks: List[Bookmark], page: int, total_pages: int) -> str:
         """
@@ -378,32 +410,82 @@ def register_bookmarks_handlers(dp: Dispatcher, manager: BookmarkManager = None,
     # ==================== СОЗДАНИЕ ЗАКЛАДКИ ====================
     @dp.message_handler(Text(startswith=['+Закладка', '+закладка'], ignore_case=True), content_types=['text'])
     async def create_bookmark_handler(message: types.Message):
-        """Обработчик команды +Закладка название [enter] текст"""
+        """Обработчик команды +Закладка название [enter] текст или в ответ на сообщение"""
         handler = BookmarkCommandHandler(manager)
-        title, description = handler.parse_create_command(message.text)
         
-        if not title or not description:
+        # Проверяем, является ли это ответом на сообщение
+        if message.reply_to_message:
+            # Создаём закладку в ответ на сообщение
+            title, description = handler.parse_create_command(message.text)
+            
+            if not title:
+                await message.answer(
+                    "❌ <b>Ошибка формата!</b>\n\n"
+                    "Правильный формат:\n"
+                    "<code>+Закладка Название</code>",
+                    parse_mode='html'
+                )
+                return
+            
+            # Используем текст или полное сообщение как описание
+            if description:
+                desc = description
+            else:
+                # Если описание не указано, используем текст оригинального сообщения
+                if message.reply_to_message.text:
+                    desc = message.reply_to_message.text[:200]
+                elif message.reply_to_message.caption:
+                    desc = message.reply_to_message.caption[:200]
+                else:
+                    desc = "[Вложение]"
+            
+            bookmark = manager.create_bookmark(
+                title=title,
+                author_id=message.from_user.id,
+                author_name=message.from_user.first_name or message.from_user.username or "Unknown",
+                description=desc,
+                message_id=message.reply_to_message.message_id,
+                chat_id=message.chat.id
+            )
+            
+            # Создаём инлайн кнопку для перехода к сообщению
+            link = manager.get_message_link(bookmark)
+            keyboard = types.InlineKeyboardMarkup()
+            if link:
+                keyboard.add(types.InlineKeyboardButton(text="🔗 Перейти к сообщению", url=link))
+            
             await message.answer(
-                "❌ <b>Ошибка формата!</b>\n\n"
-                "Правильный формат:\n"
-                "<code>+Закладка Название\n"
-                "Описание закладки</code>",
+                f"✅ <b>Закладка создана!</b>\n\n"
+                f"{manager.format_bookmark(bookmark)}",
+                parse_mode='html',
+                reply_markup=keyboard
+            )
+        else:
+            # Создаём закладку из текста команды
+            title, description = handler.parse_create_command(message.text)
+            
+            if not title or not description:
+                await message.answer(
+                    "❌ <b>Ошибка формата!</b>\n\n"
+                    "Правильный формат:\n"
+                    "<code>+Закладка Название\n"
+                    "Описание закладки</code>",
+                    parse_mode='html'
+                )
+                return
+            
+            bookmark = manager.create_bookmark(
+                title=title,
+                author_id=message.from_user.id,
+                author_name=message.from_user.first_name or message.from_user.username or "Unknown",
+                description=description
+            )
+            
+            await message.answer(
+                f"✅ <b>Закладка создана!</b>\n\n"
+                f"{manager.format_bookmark(bookmark)}",
                 parse_mode='html'
             )
-            return
-        
-        bookmark = manager.create_bookmark(
-            title=title,
-            author_id=message.from_user.id,
-            author_name=message.from_user.first_name or message.from_user.username or "Unknown",
-            description=description
-        )
-        
-        await message.answer(
-            f"✅ <b>Закладка создана!</b>\n\n"
-            f"{manager.format_bookmark(bookmark)}",
-            parse_mode='html'
-        )
     
     # ==================== ПРОСМОТР ЗАКЛАДКИ ПО НОМЕРУ ====================
     @dp.message_handler(Text(startswith=['Закладка', 'закладка'], ignore_case=True), 
@@ -430,9 +512,16 @@ def register_bookmarks_handlers(dp: Dispatcher, manager: BookmarkManager = None,
             await message.answer(f"❌ Закладка #{bookmark_id} не найдена")
             return
         
+        # Создаём инлайн кнопку для перехода к сообщению если оно есть
+        keyboard = types.InlineKeyboardMarkup()
+        link = manager.get_message_link(bookmark)
+        if link:
+            keyboard.add(types.InlineKeyboardButton(text="🔗 Перейти к сообщению", url=link))
+        
         await message.answer(
             manager.format_bookmark(bookmark),
-            parse_mode='html'
+            parse_mode='html',
+            reply_markup=keyboard if keyboard.inline_keyboard else None
         )
     
     # ==================== ЧАТБУК (ВСЕ ОТКРЫТЫЕ ЗАКЛАДКИ) ====================
