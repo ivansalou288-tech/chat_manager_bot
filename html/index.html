@@ -285,6 +285,69 @@
                 width: 100%;
             }
         }
+
+        .author-section {
+            background: white;
+            border-radius: 15px;
+            padding: 40px;
+            margin: 60px 0;
+            text-align: center;
+            box-shadow: 0 10px 35px rgba(0,0,0,0.2);
+            max-width: 500px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .author-avatar {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            margin: 0 auto 20px;
+            border: 5px solid #35be71;
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+            object-fit: cover;
+        }
+
+        .author-name {
+            font-size: 2em;
+            color: #667eea;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        .author-age {
+            font-size: 1.2em;
+            color: #666;
+            margin-bottom: 15px;
+        }
+
+        .author-telegram {
+            display: inline-block;
+            margin-top: 20px;
+        }
+
+        .telegram-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 12px 25px;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .telegram-link:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.6);
+        }
+
+        .telegram-icon {
+            font-size: 1.5em;
+        }
     </style>
 </head>
 <body>
@@ -485,6 +548,20 @@
                         📖 USER_GUIDE.html
                     </a>
                 </div>
+            </div>
+        </div>
+
+        <!-- АВТОР ПРОЕКТА -->
+        <div class="author-section">
+            <img src="../photos/ezh.jpg" alt="Avatar" class="author-avatar">
+            <div class="author-name">Иван</div>
+            <div class="author-age">14 лет</div>
+            <p style="color: #666; margin-bottom: 20px;">Создатель Chat Manager Bot</p>
+            <div class="author-telegram">
+                <a href="https://t.me/zzoobank" class="telegram-link" target="_blank">
+                    <span class="telegram-icon">📱</span>
+                    <span>@zzoobank</span>
+                </a>
             </div>
         </div>
 
