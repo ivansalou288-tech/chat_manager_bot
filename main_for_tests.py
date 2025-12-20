@@ -1,27 +1,20 @@
-import sys
-import os
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from aiogram import executor, Bot, Dispatcher
-from aiogram.dispatcher.filters import Text
+from modules.bookmarks import BookmarkManager
 
-from aiogram.utils.exceptions import *
-from main.utils import CopyTextButton
-from path import Path
+# Инициализировать менеджер
+manager = BookmarkManager()
 
+# Добавить закладку
+manager.add_bookmark(
+    user_id=123456,
+    chat_id=-1001234567890,
+    message_id=999,
+    message_text="Важное сообщение",
+    author_id=111111,
+    author_name="@username"
+)
 
-#? EN: Bot initialization
-#* RU: Инициализация бота
-token="8451829699:AAE_tfApKWq3r82i0U7yD98RCcQPIMmMT1Q"
-api_id =21842840
-api_hash ="1db0b6e807c90e6364287ad8af7fa655"
-bot = Bot(token=token)
-dp = Dispatcher(bot)
+# Получить все закладки
+bookmarks = manager.get_user_bookmarks(123456)
 
-@dp.message_handler(Text(startswith='!тест', ignore_case=True))
-async def set_new_chat(message):
-    with open('docs/USER_GUIDE.md', 'r', encoding='utf-8') as f:
-        text = f.read()
-    await message.answer(text, parse_mode = 'markdown')  # Telegram message limit
-        
-if __name__ == "__main__":
-    executor.start_polling(dp)
+# Удалить закладку
+manager.remove_bookmark(123456, -1001234567890, 999)
