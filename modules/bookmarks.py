@@ -210,7 +210,8 @@ async def show_bookmarks_handler(message: types.Message):
         keyboard.add(
             InlineKeyboardButton(
                 text=button_text,
-                callback_data=f"bookmark_go_{chat_id}_{msg_id}"
+                # callback_data=f"bookmark_go_{chat_id}_{msg_id}
+                url=f"https://t.me/c/{str(chat_id)[4:]}/{msg_id}"
             ),
             InlineKeyboardButton(
                 text="❌",
