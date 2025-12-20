@@ -1212,13 +1212,13 @@ async def start(message):
         types.InlineKeyboardButton(text="☎️  Менеджер", url='https://t.me/werty_pub'),
         types.InlineKeyboardButton(text="📝  Регистрация", url="https://t.me/werty_clan_helper_bot"),
         types.InlineKeyboardButton(text="Канал WERTY", url="https://t.me/Werty_Metro"),
-        types.InlineKeyboardButton(text="👨‍💻Нашел баг!(админ бота)", url="https://t.me/zzoobank")
 
     ]
 
-    commands = types.InlineKeyboardButton(text='⚒️ Команды', url='https://ivansalou288-tech.github.io/chat_manager_bot/')
+    commands = types.InlineKeyboardButton(text='⚒️ Команды', url='https://ivansalou288-tech.github.io/chat_manager_bot/html/USER_GUIDE.html')
+    web = types.InlineKeyboardButton(text='👨‍💻 Наш сайт', url='https://ivansalou288-tech.github.io/chat_manager_bot/html/index.html')
     keyboard = types.InlineKeyboardMarkup(row_width=1)
-    keyboard.add(*buttons).add(commands)
+    keyboard.add(*buttons).add(commands).add(web)
 
     await bot.send_photo(message.chat.id,photo=open(f'{curent_path}/photos/klan_ava.jpg', 'rb'), caption=f'Приветсвуем тебя в <b>WERTY | Чат-менеджер</b>\n\n{is_in_klan}\n\nЧто ты хочешь сделать?', parse_mode='html',reply_markup=keyboard)
 

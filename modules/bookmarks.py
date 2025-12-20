@@ -144,7 +144,7 @@ bookmark_manager = BookmarkManager()
 
 # EN: Add bookmark by replying with 📌 emoji to a message
 # RU: Добавить закладку, ответив на сообщение эмодзи 📌
-@dp.message_handler(lambda message: message.reply_to_message is not None and message.text and message.text.lower() == '📌')
+@dp.message_handler(lambda message: message.reply_to_message is not None and message.text and message.text.lower() == '📌' or message.text and message.text.lower() == '+закладка')
 async def add_bookmark_handler(message: types.Message):
     """Add bookmark by replying with 📌"""
     replied_msg = message.reply_to_message
@@ -184,7 +184,7 @@ async def add_bookmark_handler(message: types.Message):
 
 # EN: Show user's bookmarks
 # RU: Показать закладки пользователя
-@dp.message_handler(commands=['bookmarks', 'закладки'])
+@dp.message_handler(commands=['bookmarks', 'закладки'], commands_prefix='!/.')
 async def show_bookmarks_handler(message: types.Message):
     """Show user's bookmarks"""
     bookmarks = bookmark_manager.get_user_bookmarks(message.from_user.id)
