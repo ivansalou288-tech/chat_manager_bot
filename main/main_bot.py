@@ -21,17 +21,8 @@ from modules.rus_rulet import *
 from modules.golden_rulet import *
 from modules.who_is_who import *
 from modules.hot_cold import register_hot_cold_handlers
-from modules.bookmarks import BookmarkManager, register_bookmarks_handlers
-
-# Run initialization
-async def _init_handlers():
-    register_hot_cold_handlers(dp)
-    await register_bookmarks_handlers(dp)
-
-# Initialize on startup using dp.startup
-@dp.startup
-async def on_startup():
-    await register_bookmarks_handlers(dp)
+from modules.bookmarks import *
+  # Import to register all handlers
 
 register_hot_cold_handlers(dp)
 
