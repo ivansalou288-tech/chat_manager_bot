@@ -1,667 +1,330 @@
 """
-Модуль управления закладками чата (Чатбук)
-Позволяет пользователям создавать, просматривать и удалять закладки на сообщения и темы
+EN: Bookmarks module - allows users to save messages by replying to them
+RU: Модуль закладок - позволяет пользователям сохранять сообщения, отвечая на них
 """
 
-import json
-import os
-import sys
+import sqlite3
 from datetime import datetime
-from typing import List, Dict, Optional, Tuple
-from dataclasses import dataclass, asdict
-
-# Импорт aiogram для интеграции с ботом
-try:
-    from aiogram import types, Dispatcher
-    from aiogram.dispatcher.filters import Text
-    AIOGRAM_AVAILABLE = True
-except ImportError:
-    AIOGRAM_AVAILABLE = False
-
-
-@dataclass
-class Bookmark:
-    """Класс для хранения информации о закладке"""
-    id: int
-    title: str
-    author_id: int
-    author_name: str
-    description: str
-    message_id: Optional[int] = None
-    chat_id: Optional[int] = None
-    created_at: str = ""
-    is_public: bool = True
-    
-    def __post_init__(self):
-        if not self.created_at:
-            self.created_at = datetime.now().isoformat()
+from aiogram import types
+from aiogram.types import ParseMode, InlineKeyboardButton, InlineKeyboardMarkup
+from main.config import *
 
 
 class BookmarkManager:
-    """Менеджер для управления закладками"""
+    """
+    EN: Manager class for handling bookmark operations
+    RU: Класс-менеджер для управления операциями с закладками
+    """
     
-    # Размер одной страницы в списке закладок
-    PAGE_SIZE = 10
+    def __init__(self, db_path=main_path):
+        self.db_path = db_path
+        self.init_db()
     
-    def __init__(self, data_dir: str = "databases"):
+    def init_db(self):
         """
-        Инициализация менеджера закладок
+        EN: Initialize bookmarks table in the database
+        RU: Инициализирует таблицу закладок в базе данных
+        """
+        connection = sqlite3.connect(self.db_path, check_same_thread=False)
+        cursor = connection.cursor()
+        
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS bookmarks (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                chat_id INTEGER NOT NULL,
+                message_id INTEGER NOT NULL,
+                message_text TEXT,
+                author_id INTEGER,
+                author_name TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(user_id, chat_id, message_id)
+            )
+        ''')
+        connection.commit()
+        connection.close()
+    
+    def add_bookmark(self, user_id, chat_id, message_id, message_text=None, author_id=None, author_name=None):
+        """
+        EN: Add a new bookmark
+        RU: Добавить новую закладку
         
         Args:
-            data_dir: Директория для хранения данных закладок
-        """
-        self.data_dir = data_dir
-        self.bookmarks_file = os.path.join(data_dir, "bookmarks.json")
-        self.bookmarks: Dict[int, Bookmark] = {}
-        self.next_id = 1
-        self._load_bookmarks()
-    
-    def _load_bookmarks(self) -> None:
-        """Загрузить закладки из файла"""
-        if os.path.exists(self.bookmarks_file):
-            try:
-                with open(self.bookmarks_file, 'r', encoding='utf-8') as f:
-                    data = json.load(f)
-                    self.next_id = data.get('next_id', 1)
-                    for bm_data in data.get('bookmarks', []):
-                        bm = Bookmark(**bm_data)
-                        self.bookmarks[bm.id] = bm
-            except Exception as e:
-                print(f"Ошибка при загрузке закладок: {e}")
-    
-    def _save_bookmarks(self) -> None:
-        """Сохранить закладки в файл"""
-        try:
-            os.makedirs(self.data_dir, exist_ok=True)
-            data = {
-                'next_id': self.next_id,
-                'bookmarks': [asdict(bm) for bm in self.bookmarks.values()]
-            }
-            with open(self.bookmarks_file, 'w', encoding='utf-8') as f:
-                json.dump(data, f, ensure_ascii=False, indent=2)
-        except Exception as e:
-            print(f"Ошибка при сохранении закладок: {e}")
-    
-    def create_bookmark(self, title: str, author_id: int, author_name: str, 
-                       description: str, message_id: Optional[int] = None, 
-                       chat_id: Optional[int] = None) -> Bookmark:
-        """
-        Создать новую закладку
-        
-        Args:
-            title: Название закладки
-            author_id: ID автора закладки
-            author_name: Имя автора закладки
-            description: Описание/содержание закладки
-            message_id: ID сообщения, на которое указывает закладка (опционально)
-            chat_id: ID чата, где расположено сообщение (опционально)
+            user_id: ID пользователя, который сохраняет закладку
+            chat_id: ID чата, где находится сообщение
+            message_id: ID сообщения
+            message_text: Текст сообщения (опционально)
+            author_id: ID автора сообщения
+            author_name: Имя/юзернейм автора
         
         Returns:
-            Созданная закладка
+            bool: True если успешно, False если закладка уже существует
         """
-        bookmark = Bookmark(
-            id=self.next_id,
-            title=title,
+        try:
+            connection = sqlite3.connect(self.db_path, check_same_thread=False)
+            cursor = connection.cursor()
+            
+            cursor.execute('''
+                INSERT INTO bookmarks 
+                (user_id, chat_id, message_id, message_text, author_id, author_name) 
+                VALUES (?, ?, ?, ?, ?, ?)
+            ''', (user_id, chat_id, message_id, message_text, author_id, author_name))
+            
+            connection.commit()
+            connection.close()
+            return True
+        except sqlite3.IntegrityError:
+            return False
+    
+    def remove_bookmark(self, user_id, chat_id, message_id):
+        """
+        EN: Remove a bookmark
+        RU: Удалить закладку
+        
+        Returns:
+            bool: True если удалена, False если не найдена
+        """
+        connection = sqlite3.connect(self.db_path, check_same_thread=False)
+        cursor = connection.cursor()
+        
+        cursor.execute('''
+            DELETE FROM bookmarks 
+            WHERE user_id = ? AND chat_id = ? AND message_id = ?
+        ''', (user_id, chat_id, message_id))
+        
+        deleted = cursor.rowcount > 0
+        connection.commit()
+        connection.close()
+        return deleted
+    
+    def get_user_bookmarks(self, user_id):
+        """
+        EN: Get all bookmarks for a user
+        RU: Получить все закладки пользователя
+        
+        Returns:
+            list: Список закладок [(id, user_id, chat_id, message_id, message_text, author_id, author_name, created_at), ...]
+        """
+        connection = sqlite3.connect(self.db_path, check_same_thread=False)
+        cursor = connection.cursor()
+        
+        bookmarks = cursor.execute('''
+            SELECT id, user_id, chat_id, message_id, message_text, author_id, author_name, created_at
+            FROM bookmarks
+            WHERE user_id = ?
+            ORDER BY created_at DESC
+        ''', (user_id,)).fetchall()
+        
+        connection.close()
+        return bookmarks
+    
+    def is_bookmarked(self, user_id, chat_id, message_id):
+        """
+        EN: Check if message is already bookmarked by user
+        RU: Проверить, сохранена ли закладка пользователем
+        
+        Returns:
+            bool: True если закладка существует
+        """
+        connection = sqlite3.connect(self.db_path, check_same_thread=False)
+        cursor = connection.cursor()
+        
+        result = cursor.execute('''
+            SELECT id FROM bookmarks
+            WHERE user_id = ? AND chat_id = ? AND message_id = ?
+        ''', (user_id, chat_id, message_id)).fetchone()
+        
+        connection.close()
+        return result is not None
+
+
+# Initialize the BookmarkManager
+bookmark_manager = BookmarkManager()
+
+
+async def register_bookmarks_handlers(dp):
+    """
+    EN: Register all bookmark-related handlers
+    RU: Зарегистрировать все обработчики закладок
+    """
+    
+    @dp.message_handler(lambda message: message.reply_to_message is not None and message.text and message.text.lower() == '📌')
+    async def add_bookmark(message: types.Message):
+        """
+        EN: Add bookmark by replying with 📌 emoji to a message
+        RU: Добавить закладку, ответив на сообщение эмодзи 📌
+        """
+        replied_msg = message.reply_to_message
+        
+        # Get author info
+        author_id = replied_msg.from_user.id if replied_msg.from_user else None
+        author_name = replied_msg.from_user.first_name if replied_msg.from_user else "Unknown"
+        if replied_msg.from_user and replied_msg.from_user.username:
+            author_name = f"@{replied_msg.from_user.username}"
+        
+        # Get message text
+        message_text = replied_msg.text or replied_msg.caption or ""
+        if replied_msg.photo:
+            message_text = f"[Фото] {message_text}"
+        elif replied_msg.video:
+            message_text = f"[Видео] {message_text}"
+        elif replied_msg.document:
+            message_text = f"[Файл] {message_text}"
+        elif replied_msg.sticker:
+            message_text = "[Стикер]"
+        
+        # Add bookmark
+        success = bookmark_manager.add_bookmark(
+            user_id=message.from_user.id,
+            chat_id=message.chat.id,
+            message_id=replied_msg.message_id,
+            message_text=message_text[:500],  # Limit to 500 chars
             author_id=author_id,
-            author_name=author_name,
-            description=description,
-            message_id=message_id,
-            chat_id=chat_id
+            author_name=author_name
         )
-        self.bookmarks[self.next_id] = bookmark
-        self.next_id += 1
-        self._save_bookmarks()
-        return bookmark
-    
-    def get_bookmark(self, bookmark_id: int) -> Optional[Bookmark]:
-        """
-        Получить закладку по ID
         
-        Args:
-            bookmark_id: ID закладки
-        
-        Returns:
-            Закладка или None если не найдена
-        """
-        return self.bookmarks.get(bookmark_id)
-    
-    def delete_bookmark(self, bookmark_id: int, user_id: int, is_moderator: bool = False) -> Tuple[bool, str]:
-        """
-        Удалить закладку
-        
-        Args:
-            bookmark_id: ID закладки
-            user_id: ID пользователя, который удаляет
-            is_moderator: Является ли пользователь модератором
-        
-        Returns:
-            Кортеж (успешность, сообщение)
-        """
-        bookmark = self.bookmarks.get(bookmark_id)
-        if not bookmark:
-            return False, "Закладка не найдена"
-        
-        if bookmark.author_id != user_id and not is_moderator:
-            return False, "Вы не можете удалить чужую закладку"
-        
-        del self.bookmarks[bookmark_id]
-        self._save_bookmarks()
-        return True, "Закладка удалена"
-    
-    def exclude_bookmark(self, bookmark_id: int, user_id: int, is_moderator: bool = False) -> Tuple[bool, str]:
-        """
-        Исключить закладку из чатбука (не удаляя)
-        
-        Args:
-            bookmark_id: ID закладки
-            user_id: ID пользователя
-            is_moderator: Является ли пользователь модератором
-        
-        Returns:
-            Кортеж (успешность, сообщение)
-        """
-        bookmark = self.bookmarks.get(bookmark_id)
-        if not bookmark:
-            return False, "Закладка не найдена"
-        
-        if bookmark.author_id != user_id and not is_moderator:
-            return False, "Вы не можете исключить чужую закладку"
-        
-        bookmark.is_public = False
-        self._save_bookmarks()
-        return True, "Закладка исключена из чатбука"
-    
-    def get_public_bookmarks(self, page: int = 1) -> Tuple[List[Bookmark], int]:
-        """
-        Получить список открытых закладок (Чатбук)
-        
-        Args:
-            page: Номер страницы
-        
-        Returns:
-            Кортеж (список закладок на странице, общее количество страниц)
-        """
-        public_bms = [bm for bm in self.bookmarks.values() if bm.is_public]
-        public_bms.sort(key=lambda x: x.created_at, reverse=True)
-        
-        total_pages = (len(public_bms) + self.PAGE_SIZE - 1) // self.PAGE_SIZE
-        page = max(1, min(page, total_pages)) if total_pages > 0 else 1
-        
-        start = (page - 1) * self.PAGE_SIZE
-        end = start + self.PAGE_SIZE
-        
-        return public_bms[start:end], total_pages
-    
-    def get_user_bookmarks(self, author_id: int, page: int = 1) -> Tuple[List[Bookmark], int]:
-        """
-        Получить список закладок пользователя
-        
-        Args:
-            author_id: ID автора
-            page: Номер страницы
-        
-        Returns:
-            Кортеж (список закладок на странице, общее количество страниц)
-        """
-        user_bms = [bm for bm in self.bookmarks.values() if bm.author_id == author_id]
-        user_bms.sort(key=lambda x: x.created_at, reverse=True)
-        
-        total_pages = (len(user_bms) + self.PAGE_SIZE - 1) // self.PAGE_SIZE
-        page = max(1, min(page, total_pages)) if total_pages > 0 else 1
-        
-        start = (page - 1) * self.PAGE_SIZE
-        end = start + self.PAGE_SIZE
-        
-        return user_bms[start:end], total_pages
-    
-    def set_user_bookmarks_visibility(self, author_id: int, visible: bool) -> int:
-        """
-        Изменить видимость всех закладок пользователя в чатбуке
-        
-        Args:
-            author_id: ID пользователя
-            visible: True для добавления в чатбук, False для исключения
-        
-        Returns:
-            Количество измененных закладок
-        """
-        count = 0
-        for bookmark in self.bookmarks.values():
-            if bookmark.author_id == author_id:
-                bookmark.is_public = visible
-                count += 1
-        
-        self._save_bookmarks()
-        return count
-    
-    def format_bookmark(self, bookmark: Bookmark, include_id: bool = True) -> str:
-        """
-        Отформатировать закладку для вывода
-        
-        Args:
-            bookmark: Закладка
-            include_id: Включать ли ID закладки
-        
-        Returns:
-            Отформатированная строка
-        """
-        id_str = f"#{bookmark.id} " if include_id else ""
-        date_str = bookmark.created_at.split('T')[0]
-        text = (f"{id_str}📌 <b>{bookmark.title}</b>\n"
-                f"👤 Автор: {bookmark.author_name}\n"
-                f"📅 {date_str}\n"
-                f"📝 {bookmark.description}")
-        
-        # Добавляем информацию о ссылке на сообщение если оно есть
-        if bookmark.message_id and bookmark.chat_id:
-            text += f"\n🔗 <i>Ссылка на сообщение доступна</i>"
-        
-        return text
-    
-    def get_message_link(self, bookmark: Bookmark) -> Optional[str]:
-        """
-        Получить Telegram deep link на сообщение
-        
-        Args:
-            bookmark: Закладка
-        
-        Returns:
-            URL для перехода к сообщению или None
-        """
-        if not bookmark.message_id or not bookmark.chat_id:
-            return None
-        
-        # Если это групповой чат (отрицательное ID)
-        if bookmark.chat_id < 0:
-            # Преобразуем ID для group link
-            chat_id = str(bookmark.chat_id).replace('-', '')
-            return f"https://t.me/c/{chat_id}/{bookmark.message_id}"
+        if success:
+            await message.reply('✅ Закладка добавлена!', reply=False)
         else:
-            # Для личных сообщений
-            return f"tg://openmessage?chat_id={bookmark.chat_id}&message_id={bookmark.message_id}"
+            await message.reply('⚠️ Эта закладка уже сохранена!', reply=False)
     
-    def format_bookmarks_list(self, bookmarks: List[Bookmark], page: int, total_pages: int) -> str:
+    
+    @dp.message_handler(commands=['bookmarks', 'закладки'])
+    async def show_bookmarks(message: types.Message):
         """
-        Отформатировать список закладок
-        
-        Args:
-            bookmarks: Список закладок
-            page: Текущая страница
-            total_pages: Общее количество страниц
-        
-        Returns:
-            Отформатированный список
+        EN: Show user's bookmarks
+        RU: Показать закладки пользователя
         """
+        bookmarks = bookmark_manager.get_user_bookmarks(message.from_user.id)
+        
         if not bookmarks:
-            return "Нет закладок"
+            await message.answer('📌 У тебя нет закладок\n\nЧтобы добавить закладку, ответь на сообщение сообщением <code>📌</code>',
+                               parse_mode=ParseMode.HTML)
+            return
         
-        text = ""
-        for bm in bookmarks:
-            text += f"#{bm.id} 📌 <b>{bm.title}</b> - {bm.author_name}\n"
+        # Create inline buttons for each bookmark
+        keyboard = InlineKeyboardMarkup(row_width=1)
         
-        if total_pages > 1:
-            text += f"\n📄 Страница {page}/{total_pages}"
-        
-        return text
-    
-    def get_total_bookmarks(self) -> int:
-        """Получить общее количество закладок"""
-        return len(self.bookmarks)
-    
-    def get_user_bookmark_count(self, author_id: int) -> int:
-        """Получить количество закладок пользователя"""
-        return sum(1 for bm in self.bookmarks.values() if bm.author_id == author_id)
-
-
-class BookmarkCommandHandler:
-    """Обработчик команд для работы с закладками"""
-    
-    def __init__(self, manager: BookmarkManager):
-        """
-        Инициализация обработчика команд
-        
-        Args:
-            manager: Экземпляр BookmarkManager
-        """
-        self.manager = manager
-    
-    def parse_create_command(self, text: str) -> Tuple[Optional[str], Optional[str]]:
-        """
-        Распарсить команду создания закладки (+Закладка название [enter] текст)
-        
-        Args:
-            text: Текст сообщения
-        
-        Returns:
-            Кортеж (название, описание) или (None, None) если ошибка
-        """
-        # Удалить команду
-        if text.startswith('+Закладка '):
-            text = text[10:]
-        else:
-            return None, None
-        
-        # Разделить по переводу строки
-        parts = text.split('\n', 1)
-        if len(parts) < 2:
-            return None, None
-        
-        title = parts[0].strip()
-        description = parts[1].strip()
-        
-        if not title or not description:
-            return None, None
-        
-        return title, description
-    
-    def parse_bookmark_number(self, text: str) -> Optional[int]:
-        """
-        Извлечь номер закладки из текста
-        
-        Args:
-            text: Текст сообщения
-        
-        Returns:
-            Номер закладки или None
-        """
-        try:
-            # Попытаться получить число после команды
-            parts = text.split()
-            if len(parts) > 1:
-                return int(parts[-1])
-        except (ValueError, IndexError):
-            pass
-        return None
-    
-    def parse_page_number(self, text: str) -> int:
-        """
-        Извлечь номер страницы из текста
-        
-        Args:
-            text: Текст сообщения
-        
-        Returns:
-            Номер страницы (по умолчанию 1)
-        """
-        try:
-            parts = text.split()
-            if len(parts) > 1:
-                return int(parts[-1])
-        except (ValueError, IndexError):
-            pass
-        return 1
-
-
-def register_bookmarks_handlers(dp: Dispatcher, manager: BookmarkManager = None, bot = None) -> None:
-    """
-    Регистрирует все обработчики команд для системы закладок в диспетчер aiogram
-    
-    Args:
-        dp: Диспетчер aiogram
-        manager: Экземпляр BookmarkManager (если None, создаётся новый)
-        bot: Объект бота для отправки сообщений
-    """
-    if not AIOGRAM_AVAILABLE:
-        return
-    
-    if manager is None:
-        manager = BookmarkManager()
-    
-    # ==================== СОЗДАНИЕ ЗАКЛАДКИ ====================
-    @dp.message_handler(Text(startswith=['+Закладка', '+закладка'], ignore_case=True), content_types=['text'])
-    async def create_bookmark_handler(message: types.Message):
-        """Обработчик команды +Закладка название [enter] текст или в ответ на сообщение"""
-        handler = BookmarkCommandHandler(manager)
-        
-        # Проверяем, является ли это ответом на сообщение
-        if message.reply_to_message:
-            # Создаём закладку в ответ на сообщение
-            title, description = handler.parse_create_command(message.text)
+        for bookmark in bookmarks:
+            bookmark_id, user_id, chat_id, msg_id, msg_text, author_id, author_name, created_at = bookmark
             
-            if not title:
-                await message.answer(
-                    "❌ <b>Ошибка формата!</b>\n\n"
-                    "Правильный формат:\n"
-                    "<code>+Закладка Название</code>",
-                    parse_mode='html'
+            # Create display text
+            display_text = msg_text[:30] if msg_text else "Сообщение"
+            if len(msg_text or "") > 30:
+                display_text += "..."
+            
+            # Add button to go to message
+            button_text = f"📌 {display_text} - {author_name}"
+            keyboard.add(
+                InlineKeyboardButton(
+                    text=button_text,
+                    callback_data=f"bookmark_go_{chat_id}_{msg_id}"
+                ),
+                InlineKeyboardButton(
+                    text="❌",
+                    callback_data=f"bookmark_del_{bookmark_id}"
                 )
+            )
+        
+        await message.answer(
+            f'📌 <b>Твои закладки ({len(bookmarks)})</b>\n\nНажми на закладку чтобы перейти к сообщению:',
+            parse_mode=ParseMode.HTML,
+            reply_markup=keyboard
+        )
+    
+    
+    @dp.callback_query_handler(lambda call: call.data.startswith('bookmark_go_'))
+    async def go_to_bookmark(call: types.CallbackQuery):
+        """
+        EN: Handle going to a bookmarked message
+        RU: Перейти к сохраненному сообщению
+        """
+        try:
+            data = call.data.split('_')
+            chat_id = int(data[2])
+            message_id = int(data[3])
+            
+            await bot.forward_message(
+                call.from_user.id,
+                chat_id,
+                message_id
+            )
+            await call.answer('✅ Сообщение отправлено в личные сообщения', show_alert=False)
+        except Exception as e:
+            print(f"Error going to bookmark: {e}")
+            await call.answer('❌ Не удалось получить сообщение (возможно оно было удалено)', show_alert=True)
+    
+    
+    @dp.callback_query_handler(lambda call: call.data.startswith('bookmark_del_'))
+    async def delete_bookmark(call: types.CallbackQuery):
+        """
+        EN: Handle deleting a bookmark
+        RU: Удалить закладку
+        """
+        try:
+            bookmark_id = int(call.data.split('_')[2])
+            
+            connection = sqlite3.connect(bookmark_manager.db_path, check_same_thread=False)
+            cursor = connection.cursor()
+            
+            # Get bookmark info first
+            bookmark = cursor.execute(
+                'SELECT user_id, chat_id, message_id FROM bookmarks WHERE id = ?',
+                (bookmark_id,)
+            ).fetchone()
+            
+            if not bookmark:
+                await call.answer('❌ Закладка не найдена', show_alert=True)
+                connection.close()
                 return
             
-            # Используем текст или полное сообщение как описание
-            if description:
-                desc = description
+            user_id, chat_id, msg_id = bookmark
+            
+            # Verify that the user owns this bookmark
+            if user_id != call.from_user.id:
+                await call.answer('❌ Это не твоя закладка', show_alert=True)
+                connection.close()
+                return
+            
+            # Delete the bookmark
+            bookmark_manager.remove_bookmark(user_id, chat_id, msg_id)
+            
+            await call.answer('✅ Закладка удалена', show_alert=False)
+            
+            # Refresh the list
+            bookmarks = bookmark_manager.get_user_bookmarks(call.from_user.id)
+            
+            if not bookmarks:
+                await call.message.edit_text('📌 У тебя больше нет закладок')
             else:
-                # Если описание не указано, используем текст оригинального сообщения
-                if message.reply_to_message.text:
-                    desc = message.reply_to_message.text[:200]
-                elif message.reply_to_message.caption:
-                    desc = message.reply_to_message.caption[:200]
-                else:
-                    desc = "[Вложение]"
-            
-            bookmark = manager.create_bookmark(
-                title=title,
-                author_id=message.from_user.id,
-                author_name=message.from_user.first_name or message.from_user.username or "Unknown",
-                description=desc,
-                message_id=message.reply_to_message.message_id,
-                chat_id=message.chat.id
-            )
-            
-            # Создаём инлайн кнопку для перехода к сообщению
-            link = manager.get_message_link(bookmark)
-            keyboard = types.InlineKeyboardMarkup()
-            if link:
-                keyboard.add(types.InlineKeyboardButton(text="🔗 Перейти к сообщению", url=link))
-            
-            await message.answer(
-                f"✅ <b>Закладка создана!</b>\n\n"
-                f"{manager.format_bookmark(bookmark)}",
-                parse_mode='html',
-                reply_markup=keyboard
-            )
-        else:
-            # Создаём закладку из текста команды
-            title, description = handler.parse_create_command(message.text)
-            
-            if not title or not description:
-                await message.answer(
-                    "❌ <b>Ошибка формата!</b>\n\n"
-                    "Правильный формат:\n"
-                    "<code>+Закладка Название\n"
-                    "Описание закладки</code>",
-                    parse_mode='html'
+                keyboard = InlineKeyboardMarkup(row_width=1)
+                
+                for bm in bookmarks:
+                    bm_id, user_id_bm, chat_id_bm, msg_id_bm, msg_text, author_id, author_name, created_at = bm
+                    
+                    display_text = msg_text[:30] if msg_text else "Сообщение"
+                    if len(msg_text or "") > 30:
+                        display_text += "..."
+                    
+                    button_text = f"📌 {display_text} - {author_name}"
+                    keyboard.add(
+                        InlineKeyboardButton(
+                            text=button_text,
+                            callback_data=f"bookmark_go_{chat_id_bm}_{msg_id_bm}"
+                        ),
+                        InlineKeyboardButton(
+                            text="❌",
+                            callback_data=f"bookmark_del_{bm_id}"
+                        )
+                    )
+                
+                await call.message.edit_text(
+                    f'📌 <b>Твои закладки ({len(bookmarks)})</b>\n\nНажми на закладку чтобы перейти к сообщению:',
+                    parse_mode=ParseMode.HTML,
+                    reply_markup=keyboard
                 )
-                return
             
-            bookmark = manager.create_bookmark(
-                title=title,
-                author_id=message.from_user.id,
-                author_name=message.from_user.first_name or message.from_user.username or "Unknown",
-                description=description
-            )
-            
-            await message.answer(
-                f"✅ <b>Закладка создана!</b>\n\n"
-                f"{manager.format_bookmark(bookmark)}",
-                parse_mode='html'
-            )
-    
-    # ==================== ПРОСМОТР ЗАКЛАДКИ ПО НОМЕРУ ====================
-    @dp.message_handler(Text(startswith=['Закладка', 'закладка'], ignore_case=True), 
-                        content_types=['text'])
-    async def view_bookmark_handler(message: types.Message):
-        """Обработчик команды Закладка {номер}"""
-        # Пропускаем команды, которые начинаются с +, -, это отдельные команды
-        if message.text.strip().startswith(('+', '-')):
-            return
-        
-        handler = BookmarkCommandHandler(manager)
-        bookmark_id = handler.parse_bookmark_number(message.text)
-        
-        if bookmark_id is None:
-            await message.answer(
-                "❌ Укажите номер закладки:\n"
-                "<code>Закладка {номер}</code>",
-                parse_mode='html'
-            )
-            return
-        
-        bookmark = manager.get_bookmark(bookmark_id)
-        if not bookmark:
-            await message.answer(f"❌ Закладка #{bookmark_id} не найдена")
-            return
-        
-        # Создаём инлайн кнопку для перехода к сообщению если оно есть
-        keyboard = types.InlineKeyboardMarkup()
-        link = manager.get_message_link(bookmark)
-        if link:
-            keyboard.add(types.InlineKeyboardButton(text="🔗 Перейти к сообщению", url=link))
-        
-        await message.answer(
-            manager.format_bookmark(bookmark),
-            parse_mode='html',
-            reply_markup=keyboard if keyboard.inline_keyboard else None
-        )
-    
-    # ==================== ЧАТБУК (ВСЕ ОТКРЫТЫЕ ЗАКЛАДКИ) ====================
-    @dp.message_handler(Text(startswith=['Чатбук', 'чатбук'], ignore_case=True), 
-                        content_types=['text'])
-    async def chatbook_handler(message: types.Message):
-        """Обработчик команды Чатбук {номер страницы}"""
-        handler = BookmarkCommandHandler(manager)
-        page = handler.parse_page_number(message.text)
-        
-        bookmarks, total_pages = manager.get_public_bookmarks(page)
-        
-        if not bookmarks:
-            await message.answer("📭 Нет открытых закладок")
-            return
-        
-        text = "📖 <b>ЧАТБУК - Все закладки чата</b>\n\n"
-        text += manager.format_bookmarks_list(bookmarks, page, total_pages)
-        
-        await message.answer(text, parse_mode='html')
-    
-    # ==================== МОИ ЗАКЛАДКИ ====================
-    @dp.message_handler(Text(startswith=['Мои закладки', 'мои закладки'], ignore_case=True), 
-                        content_types=['text'])
-    async def my_bookmarks_handler(message: types.Message):
-        """Обработчик команды Мои закладки {номер страницы}"""
-        handler = BookmarkCommandHandler(manager)
-        page = handler.parse_page_number(message.text)
-        
-        bookmarks, total_pages = manager.get_user_bookmarks(message.from_user.id, page)
-        
-        if not bookmarks:
-            await message.answer("📭 У вас нет закладок")
-            return
-        
-        text = f"📌 <b>Ваши закладки ({manager.get_user_bookmark_count(message.from_user.id)})</b>\n\n"
-        text += manager.format_bookmarks_list(bookmarks, page, total_pages)
-        
-        await message.answer(text, parse_mode='html')
-    
-    # ==================== ЗАКЛАДКИ ПОЛЬЗОВАТЕЛЯ ====================
-    @dp.message_handler(Text(startswith=['Закладки', 'закладки'], ignore_case=True), 
-                        content_types=['text'])
-    async def user_bookmarks_handler(message: types.Message):
-        """Обработчик команды Закладки {ссылка} {номер страницы}"""
-        # Пропускаем если это уже обработано другими команды
-        if any(message.text.strip().lower().startswith(cmd) 
-               for cmd in ['закладка', 'чатбук', 'мои закладки', '+закладка', '-закладка']):
-            return
-        
-        # Попытка найти пользователя по @username или ID в тексте
-        text_parts = message.text.split()
-        
-        if len(text_parts) < 2:
-            await message.answer(
-                "❌ Укажите пользователя:\n"
-                "<code>Закладки @username {номер страницы}</code>",
-                parse_mode='html'
-            )
-            return
-        
-        # Здесь можно добавить логику поиска пользователя по @username
-        # Для простоты, отправляем уведомление
-        await message.answer(
-            "⚠️ Команда закладок пользователя требует дополнительной настройки "
-            "для поиска пользователей по @username"
-        )
-    
-    # ==================== УДАЛИТЬ ЗАКЛАДКУ ====================
-    @dp.message_handler(Text(startswith=['Удалить закладку', 'удалить закладку', '-закладка'], 
-                            ignore_case=True), content_types=['text'])
-    async def delete_bookmark_handler(message: types.Message):
-        """Обработчик команды Удалить закладку {номер} или -закладка {номер}"""
-        handler = BookmarkCommandHandler(manager)
-        bookmark_id = handler.parse_bookmark_number(message.text)
-        
-        if bookmark_id is None:
-            await message.answer(
-                "❌ Укажите номер закладки:\n"
-                "<code>Удалить закладку {номер}</code>",
-                parse_mode='html'
-            )
-            return
-        
-        # Проверяем права (модератор или автор)
-        is_moderator = False  # Это должно быть проверено на основе прав пользователя
-        success, msg = manager.delete_bookmark(bookmark_id, message.from_user.id, is_moderator)
-        
-        if success:
-            await message.answer(f"✅ {msg}")
-        else:
-            await message.answer(f"❌ {msg}")
-    
-    # ==================== ИСКЛЮЧИТЬ ЗАКЛАДКУ ====================
-    @dp.message_handler(Text(startswith=['Исключить закладку', 'исключить закладку', 
-                            'убрать закладку'], ignore_case=True), content_types=['text'])
-    async def exclude_bookmark_handler(message: types.Message):
-        """Обработчик команды Исключить закладку {номер}"""
-        handler = BookmarkCommandHandler(manager)
-        bookmark_id = handler.parse_bookmark_number(message.text)
-        
-        if bookmark_id is None:
-            await message.answer(
-                "❌ Укажите номер закладки:\n"
-                "<code>Исключить закладку {номер}</code>",
-                parse_mode='html'
-            )
-            return
-        
-        is_moderator = False
-        success, msg = manager.exclude_bookmark(bookmark_id, message.from_user.id, is_moderator)
-        
-        if success:
-            await message.answer(f"✅ {msg}")
-        else:
-            await message.answer(f"❌ {msg}")
-    
-    # ==================== КЛАДМЕН (УПРАВЛЕНИЕ ВИДИМОСТЬЮ) ====================
-    @dp.message_handler(Text(startswith=['+Кладмен', '+кладмен'], ignore_case=True), 
-                        content_types=['text'])
-    async def add_kladmen_handler(message: types.Message):
-        """Обработчик команды +Кладмен {ссылка} - добавить закладки в чатбук"""
-        count = manager.set_user_bookmarks_visibility(message.from_user.id, True)
-        
-        await message.answer(
-            f"✅ Ваши {count} закладки добавлены в чатбук",
-            parse_mode='html'
-        )
-    
-    @dp.message_handler(Text(startswith=['-Кладмен', '-кладмен'], ignore_case=True), 
-                        content_types=['text'])
-    async def remove_kladmen_handler(message: types.Message):
-        """Обработчик команды -Кладмен {ссылка} - исключить закладки из чатбука"""
-        count = manager.set_user_bookmarks_visibility(message.from_user.id, False)
-        
-        await message.answer(
-            f"✅ Ваши {count} закладок исключены из чатбука",
-            parse_mode='html'
-        )
-
-
-# ==================== ЭКСПОРТ ====================
-__all__ = ['Bookmark', 'BookmarkManager', 'BookmarkCommandHandler', 'register_bookmarks_handlers']
+            connection.close()
+        except Exception as e:
+            print(f"Error deleting bookmark: {e}")
+            await call.answer('❌ Ошибка при удалении закладки', show_alert=True)
