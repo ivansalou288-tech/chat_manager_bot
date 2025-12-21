@@ -468,21 +468,46 @@
             to { transform: rotate(360deg); }
         }
 
+        /* Список пользователей */
+        .users-list {
+            max-height: calc(100vh - 280px);
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+
+        .users-list::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .users-list::-webkit-scrollbar-track {
+            background: rgba(147, 51, 234, 0.05);
+            border-radius: 2px;
+        }
+
+        .users-list::-webkit-scrollbar-thumb {
+            background: rgba(147, 51, 234, 0.4);
+            border-radius: 2px;
+        }
+
+        .users-list::-webkit-scrollbar-thumb:hover {
+            background: rgba(147, 51, 234, 0.6);
+        }
+
         /* Карточка пользователя */
         .user-card {
             background: linear-gradient(135deg, rgba(168, 85, 247, 0.15) 0%, rgba(139, 92, 246, 0.1) 100%);
             border: 1px solid rgba(147, 51, 234, 0.3);
             border-radius: 12px;
             padding: 12px;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
             backdrop-filter: blur(10px);
-            transition: all 0.3s ease;
+            transition: all 0.2s ease;
         }
 
-        .user-card:hover {
+        .user-card:active {
             border-color: rgba(147, 51, 234, 0.6);
             box-shadow: 0 4px 16px rgba(147, 51, 234, 0.2);
-            transform: translateY(-1px);
+            transform: scale(0.98);
         }
 
         .user-card-header {
@@ -737,27 +762,25 @@
     <script>
         // ============= TELEGRAM WEBAPP INITIALIZATION =============
         let tg = window.Telegram.WebApp;
+        tg.ready();
         tg.expand();
+        tg.enableClosingConfirmation();
+
+        // Настройка темы
+        tg.setHeaderColor('#0f0f1e');
+        tg.setBackgroundColor('#0f0f1e');
 
         // Получаем информацию о пользователе
         const initData = tg.initData;
         const user = tg.initDataUnsafe?.user || {};
         const userId = user.id || 0;
 
+        console.log('Telegram WebApp initialized:', { userId, user });
+
         // Определяем базовый URL для API
-        // ⚙️ КОНФИГУРАЦИЯ: Измените эту строку на адрес вашего API сервера
-        // Примеры:
-        // - Локально: 'http://localhost:8080/api'
-        // - Production: 'https://your-domain.com/api'
-        // - На GitHub Pages: 'https://your-api-server.com/api'
-        const API_BASE_URL = 'https://ivansalou288-tech.github.io/chat_manager_bot/admin/app/api';
-        
-        // Если нужно автоматическое определение (для локального тестирования):
-        // const API_BASE_URL = (() => {
-        //     const protocol = window.location.protocol;
-        //     const hostname = window.location.hostname;
-        //     return `${protocol}//${hostname}:8080/api`;
-        // })();
+        // ⚙️ КОНФИГУРАЦИЯ: Измените на адрес вашего API сервера
+        // Для Telegram Mini App используйте публичный URL (ngrok, VPS, и т.д.)
+        const API_BASE_URL = 'https://15aaff02b9c7dd5a-79-139-178-147.serveousercontent.com/api';
 
         // ============= API FUNCTIONS =============
         async function checkUserAccess() {
@@ -852,6 +875,7 @@
                         <span class="chat-stat-value">${data.users_count || 0}</span>
                     </div>
                 </div>
+                <div class="users-list">
             `;
 
             if (!data.users || !Array.isArray(data.users)) {
@@ -891,6 +915,7 @@
                 `;
             });
 
+            html += '</div>';
             content.innerHTML = html;
         }
 
