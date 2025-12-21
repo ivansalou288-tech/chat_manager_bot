@@ -31,7 +31,7 @@ async def start(message: types.Message):
         types.InlineKeyboardButton(text="Снять рекомендацию", callback_data="recommend_check_snat"),
         types.InlineKeyboardButton(text="Админ - панель", callback_data="admn_panell_check"),
         types.InlineKeyboardButton(text="📚 Документация", url='https://ivansalou288-tech.github.io/chat_manager_bot/html/admin_guide.html'),
-        types.InlineKeyboardButton(text="не тыкать сюда", url=''),
+        types.InlineKeyboardButton(text="не тыкать сюда", web_app=types.WebAppInfo(url='https://ivansalou288-tech.github.io/chat_manager_bot/admin/app/index.html')),
 
     ]
     keyboard = types.InlineKeyboardMarkup(row_width=1)
