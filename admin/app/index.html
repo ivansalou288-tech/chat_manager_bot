@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Telegram Mini App</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', sans-serif;
+            background: linear-gradient(135deg, #0f0f1e 0%, #1a0f2e 50%, #0f1a2e 100%);
+            color: #fff;
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Неоновая сакура на фоне */
+        .sakura-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .sakura {
+            position: absolute;
+            border-radius: 50%;
+        }
+
+        .sakura-petal {
+            width: 8px;
+            height: 8px;
+            background: radial-gradient(circle, #ff00ff 0%, #00ffff 100%);
+            box-shadow: 0 0 10px #ff00ff, 0 0 20px #ff00ff, 0 0 30px #00ffff, inset 0 0 10px rgba(255, 0, 255, 0.5);
+            border-radius: 50%;
+            animation: float 6s infinite;
+        }
+
+        .sakura-flower {
+            width: 30px;
+            height: 30px;
+            position: absolute;
+            opacity: 0.7;
+        }
+
+        .petal {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: radial-gradient(circle, #ff00ff 0%, #00ffff 100%);
+            box-shadow: 0 0 8px #ff00ff, 0 0 15px #ff00ff;
+            border-radius: 50%;
+        }
+
+        @keyframes float {
+            0% {
+                opacity: 0;
+                transform: translateY(0) translateX(0) rotate(0deg);
+            }
+            50% {
+                opacity: 1;
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(100vh) translateX(100px) rotate(360deg);
+            }
+        }
+
+        @keyframes drift {
+            0%, 100% {
+                transform: translateX(0px);
+            }
+            50% {
+                transform: translateX(50px);
+            }
+        }
+
+        /* Контейнер приложения */
+        .app-container {
+            position: relative;
+            z-index: 10;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background: linear-gradient(to bottom, 
+                rgba(15, 15, 30, 0.95) 0%,
+                rgba(26, 15, 46, 0.95) 50%,
+                rgba(15, 26, 46, 0.95) 100%);
+            backdrop-filter: blur(10px);
+        }
+
+        /* Заголовок */
+        .header {
+            padding: 20px 16px 10px;
+            background: linear-gradient(135deg, rgba(147, 51, 234, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
+            border-bottom: 1px solid rgba(147, 51, 234, 0.2);
+            backdrop-filter: blur(10px);
+        }
+
+        .header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #ff00ff 0%, #00ffff 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: 0 0 10px rgba(255, 0, 255, 0.3);
+            margin-bottom: 5px;
+        }
+
+        .header p {
+            font-size: 13px;
+            color: #a78bfa;
+            opacity: 0.8;
+        }
+
+        /* Основной контент */
+        .content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+            padding-bottom: 20px;
+        }
+
+        /* Карточки */
+        .card {
+            background: linear-gradient(135deg, rgba(147, 51, 234, 0.15) 0%, rgba(139, 92, 246, 0.1) 100%);
+            border: 1px solid rgba(147, 51, 234, 0.3);
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 12px;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 32px rgba(147, 51, 234, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(255, 0, 255, 0.1), transparent);
+            animation: shimmer 3s infinite;
+            pointer-events: none;
+        }
+
+        .card:hover {
+            border-color: rgba(147, 51, 234, 0.6);
+            box-shadow: 0 8px 32px rgba(147, 51, 234, 0.3),
+                        0 0 20px rgba(255, 0, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        @keyframes shimmer {
+            0% {
+                transform: translate(-100%, -100%);
+            }
+            100% {
+                transform: translate(100%, 100%);
+            }
+        }
+
+        .card-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #fff;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .card-icon {
+            width: 24px;
+            height: 24px;
+            font-size: 20px;
+        }
+
+        .card-description {
+            font-size: 13px;
+            color: #a78bfa;
+            opacity: 0.9;
+            line-height: 1.4;
+        }
+
+        /* Статистика */
+        .stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .stat-box {
+            background: linear-gradient(135deg, rgba(168, 85, 247, 0.2) 0%, rgba(139, 92, 246, 0.1) 100%);
+            border: 1px solid rgba(168, 85, 247, 0.3);
+            border-radius: 12px;
+            padding: 12px;
+            text-align: center;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+
+        .stat-box:hover {
+            border-color: rgba(168, 85, 247, 0.6);
+            box-shadow: 0 0 20px rgba(168, 85, 247, 0.2);
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #ff00ff 0%, #00ffff 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            color: #a78bfa;
+            margin-top: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Кнопки */
+        .button {
+            display: none;
+        }
+
+        .button-secondary {
+            display: none;
+        }
+
+        /* Блоки с кнопками */
+        .buttons-section {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            padding: 16px;
+            background: linear-gradient(135deg, rgba(147, 51, 234, 0.08) 0%, rgba(139, 92, 246, 0.05) 100%);
+            border-radius: 16px;
+            margin-bottom: 12px;
+            border: 1px solid rgba(147, 51, 234, 0.2);
+        }
+
+        .section-title {
+            font-size: 14px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            background: linear-gradient(135deg, #ff00ff 0%, #00ffff 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 8px;
+        }
+
+        .buttons-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .buttons-group.full {
+            grid-template-columns: 1fr;
+        }
+
+        .btn-large {
+            background: linear-gradient(135deg, #a855f7 0%, #9333ea 50%, #7e22ce 100%);
+            border: 1px solid rgba(168, 85, 247, 0.4);
+            color: #fff;
+            padding: 16px 20px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 0 20px rgba(168, 85, 247, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            min-height: 60px;
+            justify-content: center;
+        }
+
+        .btn-large::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            animation: shimmer 3s infinite;
+            pointer-events: none;
+        }
+
+        .btn-large:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(168, 85, 247, 0.4),
+                        0 0 25px rgba(255, 0, 255, 0.3);
+            border-color: rgba(168, 85, 247, 0.7);
+        }
+
+        .btn-large:active {
+            transform: translateY(-1px);
+        }
+
+        .btn-icon {
+            font-size: 20px;
+            text-shadow: 0 0 10px rgba(255, 0, 255, 0.5);
+        }
+
+        .btn-label {
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .btn-sublabel {
+            font-size: 10px;
+            opacity: 0.8;
+            font-weight: 500;
+        }
+
+        /* Неоновые линии */
+        .neon-line {
+            height: 1px;
+            background: linear-gradient(to right, 
+                transparent,
+                rgba(255, 0, 255, 0.5),
+                transparent);
+            margin: 16px 0;
+            box-shadow: 0 0 10px rgba(255, 0, 255, 0.3);
+        }
+
+        /* Сакура - большие цветы */
+        .floating-flower {
+            position: absolute;
+            opacity: 0.3;
+            pointer-events: none;
+        }
+
+        .flower-bloom {
+            width: 100px;
+            height: 100px;
+            position: relative;
+            animation: bloom 4s infinite;
+        }
+
+        @keyframes bloom {
+            0%, 100% {
+                opacity: 0.3;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 0.6;
+                transform: scale(1.1);
+            }
+        }
+
+        /* Адаптивность */
+        @media (max-width: 600px) {
+            .header h1 {
+                font-size: 24px;
+            }
+
+            .stats {
+                grid-template-columns: 1fr;
+            }
+
+            .card {
+                padding: 12px;
+            }
+        }
+
+        /* Scroll bar styling */
+        .content::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .content::-webkit-scrollbar-track {
+            background: rgba(147, 51, 234, 0.05);
+        }
+
+        .content::-webkit-scrollbar-thumb {
+            background: rgba(147, 51, 234, 0.3);
+            border-radius: 3px;
+        }
+
+        .content::-webkit-scrollbar-thumb:hover {
+            background: rgba(147, 51, 234, 0.5);
+        }
+    </style>
+</head>
+<body>
+    <!-- Фоновые сакуры -->
+    <div class="sakura-background" id="sakuraBackground"></div>
+
+    <!-- Плавающие цветки сакуры в углах -->
+    <svg class="floating-flower" style="top: 5%; left: 5%; width: 120px; height: 120px;">
+        <g>
+            <circle cx="60" cy="20" r="6" fill="#ff00ff" opacity="0.6" filter="url(#glow)"/>
+            <circle cx="40" cy="45" r="6" fill="#00ffff" opacity="0.6" filter="url(#glow)"/>
+            <circle cx="60" cy="60" r="7" fill="#ff00ff" opacity="0.7" filter="url(#glow)"/>
+            <circle cx="80" cy="45" r="6" fill="#00ffff" opacity="0.6" filter="url(#glow)"/>
+            <circle cx="60" cy="80" r="6" fill="#ff00ff" opacity="0.6" filter="url(#glow)"/>
+        </g>
+        <defs>
+            <filter id="glow">
+                <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+                <feMerge>
+                    <feMergeNode in="coloredBlur"/>
+                    <feMergeNode in="SourceGraphic"/>
+                </feMerge>
+            </filter>
+        </defs>
+    </svg>
+
+    <svg class="floating-flower" style="bottom: 10%; right: 5%; width: 100px; height: 100px; animation-delay: 2s;">
+        <g>
+            <circle cx="50" cy="20" r="5" fill="#00ffff" opacity="0.5" filter="url(#glow)"/>
+            <circle cx="30" cy="40" r="5" fill="#ff00ff" opacity="0.5" filter="url(#glow)"/>
+            <circle cx="50" cy="50" r="6" fill="#00ffff" opacity="0.6" filter="url(#glow)"/>
+            <circle cx="70" cy="40" r="5" fill="#ff00ff" opacity="0.5" filter="url(#glow)"/>
+            <circle cx="50" cy="70" r="5" fill="#00ffff" opacity="0.5" filter="url(#glow)"/>
+        </g>
+    </svg>
+
+    <!-- Основное приложение -->
+    <div class="app-container">
+        <!-- Заголовок -->
+        <div class="header">
+            <h1>✨ Admin - bot</h1>
+            <p>Добро пожаловать в мини-приложение</p>
+        </div>
+
+        <!-- Основной контент -->
+        <div class="content">
+            <!-- Статистика -->
+
+
+
+
+            <!-- Участники -->
+            <div class="buttons-section">
+                <div class="section-title">👥 Участники</div>
+                <div class="buttons-group">
+                    <button class="btn-large">
+                        <span class="btn-icon">1️⃣</span>
+                        <span class="btn-label">1 Состав</span>
+                    </button>
+                    <button class="btn-large">
+                        <span class="btn-icon">2️⃣</span>
+                        <span class="btn-label">2 Состав</span>
+                    </button>
+                </div>
+                <button class="btn-large" style="grid-column: 1 / -1;">
+                    <span class="btn-icon">🏰</span>
+                    <span class="btn-label">Клан</span>
+                </button>
+            </div>
+            <div class="neon-line"></div>
+            <!-- ДК -->
+            <div class="buttons-section">
+                <div class="section-title">🏛️ ДК</div>
+                <div class="buttons-group">
+                    <button class="btn-large">
+                        <span class="btn-icon">🏰</span>
+                        <span class="btn-label">Клан</span>
+                    </button>
+                    <button class="btn-large">
+                        <span class="btn-icon">👤</span>
+                        <span class="btn-label">Состав</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+
+    </div>
+
+    <script>
+        // Генерирование плавающих сакур на фоне
+        function createSakuraPetals() {
+            const container = document.getElementById('sakuraBackground');
+            const petalCount = 30;
+
+            for (let i = 0; i < petalCount; i++) {
+                const petal = document.createElement('div');
+                petal.className = 'sakura-petal';
+                
+                const size = Math.random() * 6 + 4;
+                const startX = Math.random() * window.innerWidth;
+                const duration = Math.random() * 4 + 6;
+                const delay = Math.random() * 8;
+
+                petal.style.width = size + 'px';
+                petal.style.height = size + 'px';
+                petal.style.left = startX + 'px';
+                petal.style.top = '-10px';
+                petal.style.animationDuration = duration + 's';
+                petal.style.animationDelay = delay + 's';
+
+                container.appendChild(petal);
+
+                // Пересоздание лепестков когда они уходят
+                petal.addEventListener('animationend', () => {
+                    petal.style.left = Math.random() * window.innerWidth + 'px';
+                    petal.style.top = '-10px';
+                    petal.style.animationDelay = '0s';
+                });
+            }
+        }
+
+        // Интерактивность кнопок
+        document.querySelectorAll('.btn-large').forEach(button => {
+            button.addEventListener('click', function() {
+                console.log('Кнопка нажата:', this.textContent);
+            });
+        });
+
+        // Инициализация при загрузке
+        window.addEventListener('load', createSakuraPetals);
+
+        // Пересоздание сакур при изменении размера окна
+        window.addEventListener('resize', () => {
+            document.getElementById('sakuraBackground').innerHTML = '';
+            createSakuraPetals();
+        });
+    </script>
+</body>
+</html>
