@@ -988,18 +988,6 @@
         // ============= INITIALIZATION =============
         window.addEventListener('load', async () => {
             createSakuraPetals();
-            
-            // Проверяем доступ пользователя
-            const hasAccess = await checkUserAccess();
-            if (!hasAccess) {
-                document.getElementById('mainContent').innerHTML = `
-                    <div style="padding: 20px; text-align: center; color: #f87171;">
-                        <div style="font-size: 24px; margin-bottom: 12px;">❌</div>
-                        <div style="font-size: 16px; font-weight: 600;">Доступ запрещен</div>
-                        <div style="color: #a78bfa; margin-top: 8px;">У вас нет прав на просмотр админ-панели</div>
-                    </div>
-                `;
-            }
         });
 
         window.addEventListener('resize', () => {
