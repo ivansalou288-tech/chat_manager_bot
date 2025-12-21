@@ -238,11 +238,27 @@
 
         /* Кнопки */
         .button {
-            display: none;
+            background: linear-gradient(135deg, #a855f7 0%, #9333ea 50%, #7e22ce 100%);
+            border: 1px solid rgba(168, 85, 247, 0.4);
+            color: #fff;
+            padding: 16px 20px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
         }
 
         .button-secondary {
-            display: none;
+            background: rgba(147, 51, 234, 0.2);
+            border: 1px solid rgba(147, 51, 234, 0.4);
+            color: #a78bfa;
+            padding: 12px 20px;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
         }
 
         /* Блоки с кнопками */
@@ -409,6 +425,209 @@
         .content::-webkit-scrollbar-thumb:hover {
             background: rgba(147, 51, 234, 0.5);
         }
+
+        /* Меню просмотра */
+        .menu-view {
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Загружающий спиннер */
+        .loading-spinner {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 200px;
+            color: #a78bfa;
+            font-size: 16px;
+        }
+
+        .loading-spinner::after {
+            content: '';
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            margin-left: 10px;
+            border: 2px solid rgba(147, 51, 234, 0.3);
+            border-top-color: #ff00ff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Карточка пользователя */
+        .user-card {
+            background: linear-gradient(135deg, rgba(168, 85, 247, 0.15) 0%, rgba(139, 92, 246, 0.1) 100%);
+            border: 1px solid rgba(147, 51, 234, 0.3);
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 10px;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+
+        .user-card:hover {
+            border-color: rgba(147, 51, 234, 0.6);
+            box-shadow: 0 4px 16px rgba(147, 51, 234, 0.2);
+            transform: translateY(-1px);
+        }
+
+        .user-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .user-number {
+            color: #ff00ff;
+            font-weight: 700;
+            font-size: 14px;
+        }
+
+        .user-rank {
+            background: linear-gradient(135deg, #a855f7 0%, #7e22ce 100%);
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .user-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: #fff;
+            margin-bottom: 6px;
+            word-break: break-word;
+        }
+
+        .user-name a {
+            color: #00ffff;
+            text-decoration: none;
+        }
+
+        .user-name a:hover {
+            text-decoration: underline;
+        }
+
+        .user-info {
+            font-size: 12px;
+            color: #a78bfa;
+            line-height: 1.6;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        .user-info-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .user-info-label {
+            font-size: 11px;
+            color: rgba(167, 139, 250, 0.7);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .user-info-value {
+            color: #fff;
+            font-weight: 500;
+        }
+
+        /* Карточка разрешения */
+        .permission-card {
+            background: linear-gradient(135deg, rgba(168, 85, 247, 0.15) 0%, rgba(139, 92, 246, 0.1) 100%);
+            border: 1px solid rgba(147, 51, 234, 0.3);
+            border-radius: 12px;
+            padding: 14px;
+            margin-bottom: 10px;
+            backdrop-filter: blur(10px);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+
+        .permission-card:hover {
+            border-color: rgba(147, 51, 234, 0.6);
+            box-shadow: 0 4px 16px rgba(147, 51, 234, 0.2);
+        }
+
+        .permission-name {
+            font-size: 13px;
+            font-weight: 500;
+            color: #fff;
+        }
+
+        .permission-access {
+            padding: 4px 10px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .permission-access.allowed {
+            background: linear-gradient(135deg, rgba(34, 197, 94, 0.3) 0%, rgba(22, 163, 74, 0.2) 100%);
+            color: #4ade80;
+            border: 1px solid rgba(34, 197, 94, 0.5);
+        }
+
+        .permission-access.denied {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.3) 0%, rgba(220, 38, 38, 0.2) 100%);
+            color: #f87171;
+            border: 1px solid rgba(239, 68, 68, 0.5);
+        }
+
+        /* Статистика в заголовке чата */
+        .chat-stats {
+            background: linear-gradient(135deg, rgba(168, 85, 247, 0.15) 0%, rgba(139, 92, 246, 0.1) 100%);
+            border: 1px solid rgba(147, 51, 234, 0.3);
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 16px;
+            backdrop-filter: blur(10px);
+        }
+
+        .chat-stat-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 6px;
+            font-size: 13px;
+        }
+
+        .chat-stat-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .chat-stat-label {
+            color: #a78bfa;
+        }
+
+        .chat-stat-value {
+            font-weight: 600;
+            background: linear-gradient(135deg, #ff00ff 0%, #00ffff 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
     </style>
 </head>
 <body>
@@ -454,44 +673,60 @@
         </div>
 
         <!-- Основной контент -->
-        <div class="content">
-            <!-- Статистика -->
-
-
-
-
-            <!-- Участники -->
-            <div class="buttons-section">
-                <div class="section-title">👥 Участники</div>
-                <div class="buttons-group">
-                    <button class="btn-large">
-                        <span class="btn-icon">1️⃣</span>
-                        <span class="btn-label">1 Состав</span>
-                    </button>
-                    <button class="btn-large">
-                        <span class="btn-icon">2️⃣</span>
-                        <span class="btn-label">2 Состав</span>
-                    </button>
-                </div>
-                <button class="btn-large" style="grid-column: 1 / -1;">
-                    <span class="btn-icon">🏰</span>
-                    <span class="btn-label">Клан</span>
-                </button>
-            </div>
-            <div class="neon-line"></div>
-            <!-- ДК -->
-            <div class="buttons-section">
-                <div class="section-title">🏛️ ДК</div>
-                <div class="buttons-group">
-                    <button class="btn-large">
+        <div class="content" id="mainContent">
+            <!-- Главное меню -->
+            <div id="mainMenu" class="menu-view">
+                <!-- Участники -->
+                <div class="buttons-section">
+                    <div class="section-title">👥 Участники</div>
+                    <div class="buttons-group">
+                        <button class="btn-large" data-action="view-users" data-chat="sost-1">
+                            <span class="btn-icon">1️⃣</span>
+                            <span class="btn-label">1 Состав</span>
+                        </button>
+                        <button class="btn-large" data-action="view-users" data-chat="sost-2">
+                            <span class="btn-icon">2️⃣</span>
+                            <span class="btn-label">2 Состав</span>
+                        </button>
+                    </div>
+                    <button class="btn-large" style="grid-column: 1 / -1;" data-action="view-users" data-chat="klan">
                         <span class="btn-icon">🏰</span>
                         <span class="btn-label">Клан</span>
                     </button>
-                    <button class="btn-large">
-                        <span class="btn-icon">👤</span>
-                        <span class="btn-label">Состав</span>
-                    </button>
                 </div>
+                <div class="neon-line"></div>
+                <!-- ДК -->
+                <div class="buttons-section">
+                    <div class="section-title">🏛️ ДК</div>
+                    <div class="buttons-group">
+                        <button class="btn-large" data-action="view-permissions" data-chat="klan">
+                            <span class="btn-icon">🏰</span>
+                            <span class="btn-label">Клан</span>
+                        </button>
+                        <button class="btn-large" data-action="view-permissions" data-chat="sost-1">
+                            <span class="btn-icon">👤</span>
+                            <span class="btn-label">Состав</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Просмотр участников -->
+            <div id="usersView" class="menu-view" style="display: none;">
+                <button class="btn-large" style="grid-column: 1 / -1; margin-bottom: 12px;" data-action="back">
+                    <span class="btn-icon">◀️</span>
+                    <span class="btn-label">Назад</span>
+                </button>
+                <div id="usersContent" class="loading-spinner">Загрузка...</div>
+            </div>
+
+            <!-- Просмотр разрешений -->
+            <div id="permissionsView" class="menu-view" style="display: none;">
+                <button class="btn-large" style="grid-column: 1 / -1; margin-bottom: 12px;" data-action="back">
+                    <span class="btn-icon">◀️</span>
+                    <span class="btn-label">Назад</span>
+                </button>
+                <div id="permissionsContent" class="loading-spinner">Загрузка...</div>
             </div>
         </div>
 
@@ -500,9 +735,226 @@
 
     <script src="https://telegram.org/js/telegram-web-app.js?59"></script>
     <script>
+        // ============= TELEGRAM WEBAPP INITIALIZATION =============
         let tg = window.Telegram.WebApp;
         tg.expand();
-        // Генерирование плавающих сакур на фоне
+
+        // Получаем информацию о пользователе
+        const initData = tg.initData;
+        const user = tg.initDataUnsafe?.user || {};
+        const userId = user.id || 0;
+
+        // Определяем базовый URL для API
+        // ⚙️ КОНФИГУРАЦИЯ: Измените эту строку на адрес вашего API сервера
+        // Примеры:
+        // - Локально: 'http://localhost:8080/api'
+        // - Production: 'https://your-domain.com/api'
+        // - На GitHub Pages: 'https://your-api-server.com/api'
+        const API_BASE_URL = 'https://https://ivansalou288-tech.github.io/chat_manager_bot/admin/app/api';
+        
+        // Если нужно автоматическое определение (для локального тестирования):
+        // const API_BASE_URL = (() => {
+        //     const protocol = window.location.protocol;
+        //     const hostname = window.location.hostname;
+        //     return `${protocol}//${hostname}:8080/api`;
+        // })();
+
+        // ============= API FUNCTIONS =============
+        async function checkUserAccess() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/check-access`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: userId })
+                });
+                const data = await response.json();
+                return data.has_access;
+            } catch (error) {
+                console.error('Ошибка проверки доступа:', error);
+                return false;
+            }
+        }
+
+        async function fetchUsers(chat) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/users/${chat}`);
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                return await response.json();
+            } catch (error) {
+                console.error('Ошибка загрузки пользователей:', error);
+                return { error: 'Ошибка загрузки данных' };
+            }
+        }
+
+        async function fetchPermissions(chat) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/permissions/${chat}`);
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                return await response.json();
+            } catch (error) {
+                console.error('Ошибка загрузки разрешений:', error);
+                return { error: 'Ошибка загрузки данных' };
+            }
+        }
+
+        // ============= UI FUNCTIONS =============
+        function showMainMenu() {
+            document.getElementById('mainMenu').style.display = 'block';
+            document.getElementById('usersView').style.display = 'none';
+            document.getElementById('permissionsView').style.display = 'none';
+        }
+
+        function showUsersView() {
+            document.getElementById('mainMenu').style.display = 'none';
+            document.getElementById('usersView').style.display = 'block';
+            document.getElementById('permissionsView').style.display = 'none';
+        }
+
+        function showPermissionsView() {
+            document.getElementById('mainMenu').style.display = 'none';
+            document.getElementById('usersView').style.display = 'none';
+            document.getElementById('permissionsView').style.display = 'block';
+        }
+
+        function getChatTitle(chatKey) {
+            const titles = {
+                'klan': '🏰 Клан',
+                'sost-1': '1️⃣ Первый Состав',
+                'sost-2': '2️⃣ Второй Состав'
+            };
+            return titles[chatKey] || chatKey;
+        }
+
+        async function displayUsers(chatKey) {
+            showUsersView();
+            currentChat = chatKey;
+            const content = document.getElementById('usersContent');
+            content.innerHTML = '<div class="loading-spinner">Загрузка...</div>';
+
+            const data = await fetchUsers(chatKey);
+
+            if (data.error) {
+                content.innerHTML = `<div style="color: #f87171; padding: 16px; text-align: center;">Ошибка: ${data.error}</div>`;
+                return;
+            }
+
+            let html = `
+                <div class="buttons-section" style="margin-bottom: 16px;">
+                    <div class="section-title">${getChatTitle(chatKey)}</div>
+                </div>
+                <div class="chat-stats">
+                    <div class="chat-stat-item">
+                        <span class="chat-stat-label">Зарегистрировано участников:</span>
+                        <span class="chat-stat-value">${data.users_count_reg || 0}</span>
+                    </div>
+                    <div class="chat-stat-item">
+                        <span class="chat-stat-label">Всего участников:</span>
+                        <span class="chat-stat-value">${data.users_count || 0}</span>
+                    </div>
+                </div>
+            `;
+
+            if (!data.users || !Array.isArray(data.users)) {
+                content.innerHTML = `<div style="color: #f87171; padding: 16px; text-align: center;">Нет данных для отображения</div>`;
+                return;
+            }
+
+            data.users.forEach(user => {
+                html += `
+                    <div class="user-card">
+                        <div class="user-card-header">
+                            <span class="user-number">#${user.number || 0}</span>
+                            <span class="user-rank">${user.rang_name || 'Нет'}</span>
+                        </div>
+                        <div class="user-name">
+                            ${user.username && user.username !== 'all' ? `<a href="https://t.me/${user.username}" target="_blank">@${user.username}</a>` : '@' + (user.nik || 'unknown')}
+                        </div>
+                        <div class="user-info">
+                            <div class="user-info-item">
+                                <span class="user-info-label">Имя</span>
+                                <span class="user-info-value">${user.name}</span>
+                            </div>
+                            <div class="user-info-item">
+                                <span class="user-info-label">Возраст</span>
+                                <span class="user-info-value">${user.age || 'N/A'}</span>
+                            </div>
+                            <div class="user-info-item">
+                                <span class="user-info-label">PUBG Ник</span>
+                                <span class="user-info-value">${user.pubg_nick || 'N/A'}</span>
+                            </div>
+                            <div class="user-info-item">
+                                <span class="user-info-label">Сообщений</span>
+                                <span class="user-info-value">${user.mess_count}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            content.innerHTML = html;
+        }
+
+        async function displayPermissions(chatKey) {
+            showPermissionsView();
+            currentChat = chatKey;
+            const content = document.getElementById('permissionsContent');
+            content.innerHTML = '<div class="loading-spinner">Загрузка...</div>';
+
+            const data = await fetchPermissions(chatKey);
+
+            if (data.error) {
+                content.innerHTML = `<div style="color: #f87171; padding: 16px; text-align: center;">Ошибка: ${data.error}</div>`;
+                return;
+            }
+
+            let html = `
+                <div class="buttons-section" style="margin-bottom: 16px;">
+                    <div class="section-title">${getChatTitle(chatKey)} - Разрешения</div>
+                </div>
+            `;
+
+            if (!data.permissions || !Array.isArray(data.permissions)) {
+                content.innerHTML = `<div style="color: #f87171; padding: 16px; text-align: center;">Нет данных для отображения</div>`;
+                return;
+            }
+
+            data.permissions.forEach(perm => {
+                const isAllowed = perm.access === 'Есть' || perm.access === '1' || perm.access === 1 || perm.access === true;
+                html += `
+                    <div class="permission-card">
+                        <span class="permission-name">${perm.command_name || 'Unknown'}</span>
+                        <span class="permission-access ${isAllowed ? 'allowed' : 'denied'}">
+                            ${isAllowed ? '✓ Есть' : '✗ Нет'}
+                        </span>
+                    </div>
+                `;
+            });
+
+            content.innerHTML = html;
+        }
+
+        // ============= EVENT HANDLERS =============
+        document.addEventListener('click', async (e) => {
+            const button = e.target.closest('[data-action]');
+            if (!button) return;
+
+            const action = button.dataset.action;
+            const chat = button.dataset.chat;
+
+            switch(action) {
+                case 'view-users':
+                    await displayUsers(chat);
+                    break;
+                case 'view-permissions':
+                    await displayPermissions(chat);
+                    break;
+                case 'back':
+                    showMainMenu();
+                    break;
+            }
+        });
+
+        // ============= SAKURA ANIMATION =============
         function createSakuraPetals() {
             const container = document.getElementById('sakuraBackground');
             const petalCount = 30;
@@ -525,7 +977,6 @@
 
                 container.appendChild(petal);
 
-                // Пересоздание лепестков когда они уходят
                 petal.addEventListener('animationend', () => {
                     petal.style.left = Math.random() * window.innerWidth + 'px';
                     petal.style.top = '-10px';
@@ -534,17 +985,23 @@
             }
         }
 
-        // Интерактивность кнопок
-        document.querySelectorAll('.btn-large').forEach(button => {
-            button.addEventListener('click', function() {
-                console.log('Кнопка нажата:', this.textContent);
-            });
+        // ============= INITIALIZATION =============
+        window.addEventListener('load', async () => {
+            createSakuraPetals();
+            
+            // Проверяем доступ пользователя
+            const hasAccess = await checkUserAccess();
+            if (!hasAccess) {
+                document.getElementById('mainContent').innerHTML = `
+                    <div style="padding: 20px; text-align: center; color: #f87171;">
+                        <div style="font-size: 24px; margin-bottom: 12px;">❌</div>
+                        <div style="font-size: 16px; font-weight: 600;">Доступ запрещен</div>
+                        <div style="color: #a78bfa; margin-top: 8px;">У вас нет прав на просмотр админ-панели</div>
+                    </div>
+                `;
+            }
         });
 
-        // Инициализация при загрузке
-        window.addEventListener('load', createSakuraPetals);
-
-        // Пересоздание сакур при изменении размера окна
         window.addEventListener('resize', () => {
             document.getElementById('sakuraBackground').innerHTML = '';
             createSakuraPetals();
