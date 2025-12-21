@@ -1,5 +1,8 @@
 import sqlite3
-
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from main.secret import admin_token as token
 from aiogram import executor, Bot, Dispatcher, types
 from path import Path
 from password_generator import PasswordGenerator
@@ -28,7 +31,6 @@ dinamik_path = curent_path / 'databases' / 'din_data.db'
 
 #? EN: Bot configuration
 #* RU: Конфигурация бота
-token = "8156493008:AAF2QyOzc3rBAtDSq2sO5M1LFjNz4a7xTc8"
 bot = Bot(token=token)
 dp = Dispatcher(bot)
 

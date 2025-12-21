@@ -2,7 +2,10 @@ import random
 import types
 from datetime import datetime
 from unittest.mock import call
-
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from main.secret import prinatie_token as token
 import sqlite3
 import telebot
 from path import Path
@@ -14,10 +17,6 @@ warn_path = curent_path / 'databases' / 'warn_list.db'
 datahelp_path = curent_path / 'databases' / 'my_database.db'
 tur_path = curent_path / 'databases' / 'tournaments.db'
 dinamik_path = curent_path / 'databases' / 'din_data.db'
-
-
-
-token="8310916743:AAHqODYdviyxXhPZcsNhN4tpXeIlLm-FAJ8"
 
 
 

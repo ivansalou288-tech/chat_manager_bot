@@ -1,6 +1,7 @@
 import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from main.secret import main_token as token
 from datetime import datetime, timedelta
 from aiogram.types import ChatPermissions
 from aiogram import executor, Bot, Dispatcher, types
@@ -16,9 +17,6 @@ from googletrans import Translator
 
 #? EN: Bot initialization
 #* RU: Инициализация бота
-token="8516733469:AAEk8KuRNWyURMaRQFeJJIyz95pK4kBIiwA"
-api_id =21842840
-api_hash ="1db0b6e807c90e6364287ad8af7fa655"
 bot = Bot(token=token)
 dp = Dispatcher(bot)
 
