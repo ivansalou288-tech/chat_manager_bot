@@ -498,7 +498,10 @@
 
     </div>
 
+    <script src="https://telegram.org/js/telegram-web-app.js?59"></script>
     <script>
+        let tg = window.Telegram.WebApp;
+        tg.expand();
         // Генерирование плавающих сакур на фоне
         function createSakuraPetals() {
             const container = document.getElementById('sakuraBackground');
