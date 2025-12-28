@@ -69,6 +69,8 @@ async def slot_roulette(message: types.Message):
 
     connection = sqlite3.connect(kasik_path, check_same_thread=False)
     cursor = connection.cursor()
+    cursor.execute('CREATE TABLE IF NOT EXISTS ruletka (user_id INTEGER PRIMARY KEY, last_date TEXT)')
+    connection.commit()
     try:
         cursor.execute("SELECT last_date FROM ruletka WHERE user_id = ?", (user_id,))
         lst = datetime.strptime(cursor.fetchall()[0][0], "%H:%M:%S %d.%m.%Y")
@@ -118,6 +120,8 @@ async def slot_roulette(message: types.Message):
 
     connection_kasik = sqlite3.connect(kasik_path, check_same_thread=False)
     cursor_kasik = connection_kasik.cursor()
+    cursor_kasik.execute('CREATE TABLE IF NOT EXISTS ruletka (user_id INTEGER PRIMARY KEY, last_date TEXT)')
+    connection_kasik.commit()
     try:
         cursor_kasik.execute('INSERT INTO ruletka (user_id, last_date) VALUES (?, ?)', (user_id, datetime.now().strftime("%H:%M:%S %d.%m.%Y")))
     except sqlite3.IntegrityError:
