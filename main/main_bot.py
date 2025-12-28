@@ -3174,7 +3174,9 @@ async def set_period(message):
 
         commands = {
             'мут': 'mut',
-            'общий сбор': 'all',
+            'общий-сбор': 'all',
+            'созыв': 'all',
+            'слзвать': 'all',
             'казик': 'kasik',
             'рулетка': 'slot_roulette'
         }
