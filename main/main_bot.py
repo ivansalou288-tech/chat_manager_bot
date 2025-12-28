@@ -782,6 +782,60 @@ async def all_sbor(message):
     elif await is_successful_moder(moder_id, message.chat.id, 'all') == 'chat error':
         await message.reply('📝Непредвиденная ошибка!\n💬<i>Для решения обратитесь к админу этого бота: @zzoobank</i>')
         return
+    
+    # Проверка кулдауна
+    connection = sqlite3.connect(main_path, check_same_thread=False)
+    cursor = connection.cursor()
+    try:
+        period_str = cursor.execute('SELECT period FROM default_periods WHERE command = ? AND chat = ?', ('all', message.chat.id)).fetchall()[0][0]
+        time_value, time_unit = period_str.split()
+        time_value = int(time_value)
+        if time_unit in ['ч', 'час', 'часа', 'часов']:
+            cd_delta = timedelta(hours=time_value)
+        elif time_unit in ['мин', 'минут', 'минута', 'минуты']:
+            cd_delta = timedelta(minutes=time_value)
+        elif time_unit in ['д', 'день', 'дня', 'дней', 'сутки']:
+            cd_delta = timedelta(days=time_value)
+        else:
+            cd_delta = None
+    except (IndexError, ValueError):
+        cd_delta = None
+
+    if cd_delta is not None:
+        cursor.execute('CREATE TABLE IF NOT EXISTS all_sbor_cd (chat_id INTEGER PRIMARY KEY, last_date TEXT)')
+        connection.commit()
+        try:
+            cursor.execute("SELECT last_date FROM all_sbor_cd WHERE chat_id = ?", (message.chat.id,))
+            lst = datetime.strptime(cursor.fetchall()[0][0], "%H:%M:%S %d.%m.%Y")
+            now = datetime.now()
+            delta = now - lst
+            if delta > cd_delta:
+                pass
+            else:
+                delta = cd_delta - delta
+                days = delta.days * 24
+                sec = int(str(delta.total_seconds()).split('.')[0])
+                hours = sec // 3600 - days
+                minutes = (sec % 3600) // 60
+                days = delta.days
+                if days == 0:
+                    days_text = ''
+                else:
+                    days_text = f'{days} дн '
+                if hours == 0:
+                    hours_text = ''
+                else:
+                    hours_text = f'{hours} ч '
+                if minutes == 0:
+                    minutes_text = ''
+                else:
+                    minutes_text = f'{minutes} мин '
+                lst_date = f'{days_text}{hours_text}{minutes_text}'
+                await message.answer(f'❌Можно использовать общий сбор только раз в {period_str}. Следующий сбор через {lst_date}', parse_mode=ParseMode.HTML)
+                return
+        except IndexError:
+            pass
+
     connection = sqlite3.connect(main_path)
     cursor = connection.cursor()
     try:
@@ -804,6 +858,15 @@ async def all_sbor(message):
         await message.reply(f'📢{name1} объявляет общий сбор', parse_mode='html')
     else:
         await message.reply(f'📢{name1} объявляет общий сбор\n\n💬 Объявление:\n{comments}', parse_mode='html')
+    
+    # Обновляем время последнего использования
+    if cd_delta is not None:
+        try:
+            cursor.execute('INSERT INTO all_sbor_cd (chat_id, last_date) VALUES (?, ?)', (message.chat.id, datetime.now().strftime("%H:%M:%S %d.%m.%Y")))
+        except sqlite3.IntegrityError:
+            cursor.execute('UPDATE all_sbor_cd SET last_date = ? WHERE chat_id = ?', (datetime.now().strftime("%H:%M:%S %d.%m.%Y"), message.chat.id))
+        connection.commit()
+    
     a = ''
     for r in range(users_count):
         a += mentions[r]
