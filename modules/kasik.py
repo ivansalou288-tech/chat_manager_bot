@@ -52,6 +52,23 @@ async def kasik(message: types.Message):
         await message.answer('В доступе отказано, ты в черном списке')
         return
 
+    connection = sqlite3.connect(main_path, check_same_thread=False)
+    cursor = connection.cursor()
+    try:
+        period_str = cursor.execute('SELECT period FROM default_periods WHERE command = ? AND chat = ?', ('kasik', message.chat.id)).fetchall()[0][0]
+        time_value, time_unit = period_str.split()
+        time_value = int(time_value)
+        if time_unit in ['ч', 'час', 'часа', 'часов']:
+            cd_delta = timedelta(hours=time_value)
+        elif time_unit in ['мин', 'минут', 'минута', 'минуты']:
+            cd_delta = timedelta(minutes=time_value)
+        elif time_unit in ['д', 'день', 'дня', 'дней', 'сутки']:
+            cd_delta = timedelta(days=time_value)
+        else:
+            cd_delta = timedelta(minutes=15)
+    except (IndexError, ValueError):
+        cd_delta = timedelta(minutes=15)
+
     connection = sqlite3.connect(kasik_path, check_same_thread=False)
     cursor = connection.cursor()
     user_id = message.from_user.id
@@ -59,13 +76,11 @@ async def kasik(message: types.Message):
         cursor.execute(f"SELECT last_date FROM stavki WHERE user_id = ?", (user_id,))
         lst = datetime.strptime(cursor.fetchall()[0][0], "%H:%M:%S %d.%m.%Y")
         now = datetime.now()
-        print(now, lst)
         delta = now - lst
-        print(delta, timedelta(minutes = 15))
-        if delta > timedelta(minutes = 15):
+        if delta > cd_delta:
             pass
         else:
-            delta = timedelta(minutes = 15) - delta
+            delta = cd_delta - delta
             days = delta.days * 24
             sec = int(str(delta.total_seconds()).split('.')[0])
 
@@ -87,7 +102,7 @@ async def kasik(message: types.Message):
                 minutes_text = f'{minutes} мин '
 
             lst_date = f'{days_text}{hours_text}{minutes_text}'
-            await message.answer(f'❌Можно играть в казик только раз в 15 минут. Следующий деп через {lst_date}', parse_mode=ParseMode.HTML)
+            await message.answer(f'❌Можно играть в казик только раз в {period_str}. Следующий деп через {lst_date}', parse_mode=ParseMode.HTML)
             return
     except IndexError:
         pass

@@ -1,6 +1,7 @@
 import sys
 import os
 import sqlite3
+from datetime import datetime, timedelta
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -9,6 +10,10 @@ from aiogram.dispatcher.filters import Text
 from aiogram.types import ContentType, ParseMode
 
 from main.config import dp, bot, chats, main_path
+from path import Path
+
+curent_path = Path(__file__).parent.parent
+kasik_path = curent_path / 'databases' / 'kasik.db'
 
 TRIPLES = {1: "бар", 64: "777", 22: "ягоды", 43: "лимон"}
 
@@ -45,6 +50,49 @@ async def slot_roulette(message: types.Message):
         await message.answer("🤖 Боты не могут играть в рулетку!")
         return
 
+    connection = sqlite3.connect(main_path, check_same_thread=False)
+    cursor = connection.cursor()
+    try:
+        period_str = cursor.execute('SELECT period FROM default_periods WHERE command = ? AND chat = ?', ('рулетка', message.chat.id)).fetchall()[0][0]
+        time_value, time_unit = period_str.split()
+        time_value = int(time_value)
+        if time_unit in ['ч', 'час', 'часа', 'часов']:
+            cd_delta = timedelta(hours=time_value)
+        elif time_unit in ['мин', 'минут', 'минута', 'минуты']:
+            cd_delta = timedelta(minutes=time_value)
+        elif time_unit in ['д', 'день', 'дня', 'дней', 'сутки']:
+            cd_delta = timedelta(days=time_value)
+        else:
+            cd_delta = timedelta(minutes=15)
+    except (IndexError, ValueError):
+        cd_delta = timedelta(minutes=15)
+
+    connection = sqlite3.connect(kasik_path, check_same_thread=False)
+    cursor = connection.cursor()
+    try:
+        cursor.execute("SELECT last_date FROM ruletka WHERE user_id = ?", (user_id,))
+        lst = datetime.strptime(cursor.fetchall()[0][0], "%H:%M:%S %d.%m.%Y")
+        now = datetime.now()
+        delta = now - lst
+        if delta > cd_delta:
+            pass
+        else:
+            delta = cd_delta - delta
+            sec = int(str(delta.total_seconds()).split('.')[0])
+            hours = sec // 3600
+            minutes = (sec % 3600) // 60
+            hours_text = f'{hours} ч ' if hours else ''
+            minutes_text = f'{minutes} мин ' if minutes else ''
+            await message.answer(f'❌Можно играть в рулетку только раз в {period_str}. Следующая игра через {hours_text}{minutes_text}', parse_mode=ParseMode.HTML)
+            connection.close()
+            return
+    except IndexError:
+        pass
+    connection.close()
+
+    connection = sqlite3.connect(main_path, check_same_thread=False)
+    cursor = connection.cursor()
+
     bet = None
     for part in message.text.replace(",", " ").split():
         if part.isdigit():
@@ -67,6 +115,15 @@ async def slot_roulette(message: types.Message):
         await message.answer(f"💰 У тебя недостаточно монет.\\nВ мешке: 🍊 {meshok} eZ¢\\nСтавка: 🍊 {bet} eZ¢")
         connection.close()
         return
+
+    connection_kasik = sqlite3.connect(kasik_path, check_same_thread=False)
+    cursor_kasik = connection_kasik.cursor()
+    try:
+        cursor_kasik.execute('INSERT INTO ruletka (user_id, last_date) VALUES (?, ?)', (user_id, datetime.now().strftime("%H:%M:%S %d.%m.%Y")))
+    except sqlite3.IntegrityError:
+        cursor_kasik.execute('UPDATE ruletka SET last_date = ? WHERE user_id = ?', (datetime.now().strftime("%H:%M:%S %d.%m.%Y"), user_id))
+    connection_kasik.commit()
+    connection_kasik.close()
 
     dice_msg = await bot.send_dice(message.chat.id, emoji="🎰")
     dice_value = dice_msg.dice.value

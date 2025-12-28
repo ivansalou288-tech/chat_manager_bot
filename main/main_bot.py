@@ -1919,6 +1919,8 @@ async def dk(message):
         command_en = 'tur'
     elif command == '-смс' or command == 'удаление сообщения':
         command_en = 'dell'
+    elif command == 'период':
+        command_en = 'period'
     else:
         await message.reply('Настройки для этой команды нет')
         return
@@ -3082,6 +3084,59 @@ async def dell_st(message):
     cursor.execute("DELETE FROM states")
     connection.commit()
     await message.answer('Очищено')
+
+@dp.message_handler(Text(startswith=['период'], ignore_case=True), content_types=ContentType.TEXT, is_forwarded=False)
+async def set_period(message):
+    if message.chat.id == message.from_user.id:
+        await message.answer('📝Эта команда предназначена для использования в групповых чатах, а не в личных сообщениях!')
+        return
+    moder_id = message.from_user.id
+    if await is_successful_moder(moder_id, message.chat.id, 'period') == False:
+        await message.reply('📝Ранг модератора не достаточен для использования этой команды')
+        return
+    elif await is_successful_moder(moder_id, message.chat.id, 'period') == 'Need reg':
+        await message.reply('📝Для использования бота нужно зарегистрироваться\n\n💬<i>Для регистрации напиши @zzoobank, он все объяснит</i>', parse_mode='html')
+        return
+    elif await is_successful_moder(moder_id, message.chat.id, 'period') == 'chat error':
+        await message.reply('📝Непредвиденная ошибка!\n💬<i>Для решения обратитесь к админу этого бота: @zzoobank</i>')
+        return
+    
+    try:
+        parts = message.text.split()
+        if len(parts) < 3:
+            await message.reply('📝Неверный формат команды!\n\nИспользуйте: <code>период {команда/модуль} {число} {единица}</code>\nПример: <code>период мут 30 мин</code>', parse_mode='html')
+            return
+        
+        command_ru = parts[1].lower()
+
+        commands = {
+            'мут': 'mut',
+            'общий сбор': 'all',
+            'казик': 'kasik',
+            'рулетка': 'slot_roulette'
+        }
+
+        try:
+            command = commands[command_ru]
+        except KeyError:
+            await message.reply('📝Неверная команда!\n\nИспользуйте: <code>период {команда/модуль} {число} {единица}</code>\nПример: <code>период казик 30 мин</code>', parse_mode='html')
+            return
+
+        time_value = int(parts[2])
+        time_unit = parts[3].lower() if len(parts) > 3 else 'мин'
+        
+        connection = sqlite3.connect(main_path)
+        cursor = connection.cursor()
+        cursor.execute('CREATE TABLE IF NOT EXISTS default_periods (command TEXT, period TEXT, chat INTEGER, PRIMARY KEY (command, chat))')
+        period = f"{time_value} {time_unit}"
+        cursor.execute('INSERT OR REPLACE INTO default_periods (command, period, chat) VALUES (?, ?, ?)', (command, period, message.chat.id))
+        connection.commit()
+        
+        await message.reply(f'✅Установлен дефолтный период для команды <b>{command}</b>: {period}', parse_mode='html')
+    except ValueError:
+        await message.reply('📝Ошибка! Время должно быть числом.\nПример: <code>период казик 10 мин</code>', parse_mode='html')
+    except Exception as e:
+        await message.reply(f'📝Произошла ошибка: {str(e)}')
 
 
 @dp.message_handler()
