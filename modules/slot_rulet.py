@@ -53,7 +53,7 @@ async def slot_roulette(message: types.Message):
     connection = sqlite3.connect(main_path, check_same_thread=False)
     cursor = connection.cursor()
     try:
-        period_str = cursor.execute('SELECT period FROM default_periods WHERE command = ? AND chat = ?', ('рулетка', message.chat.id)).fetchall()[0][0]
+        period_str = cursor.execute('SELECT period FROM default_periods WHERE command = ? AND chat = ?', ('slot_roulette', message.chat.id)).fetchall()[0][0]
         time_value, time_unit = period_str.split()
         time_value = int(time_value)
         if time_unit in ['ч', 'час', 'часа', 'часов']:
@@ -64,12 +64,10 @@ async def slot_roulette(message: types.Message):
             cd_delta = timedelta(days=time_value)
         else:
             cd_delta = timedelta(minutes=15)
-        print(f'{period_str}')
+
     except (IndexError, ValueError):
         cd_delta = timedelta(minutes=15)
-    except UnboundLocalError:
-        cd_delta = timedelta(minutes=15)
-        period_str = '15 мин'
+
 
     connection = sqlite3.connect(kasik_path, check_same_thread=False)
     cursor = connection.cursor()
@@ -89,7 +87,11 @@ async def slot_roulette(message: types.Message):
             minutes = (sec % 3600) // 60
             hours_text = f'{hours} ч ' if hours else ''
             minutes_text = f'{minutes} мин ' if minutes else ''
-            await message.answer(f'❌Можно играть в рулетку только раз в {period_str}. Следующая игра через {hours_text}{minutes_text}', parse_mode=ParseMode.HTML)
+            try:
+                await message.answer(f'❌Можно играть в рулетку только раз в {period_str}. Следующая игра через {hours_text}{minutes_text}', parse_mode=ParseMode.HTML)
+            except UnboundLocalError:
+                await message.answer(f'❌Можно играть в рулетку только раз в 15 минут. Следующая игра через {hours_text}{minutes_text}', parse_mode=ParseMode.HTML)
+        
             connection.close()
             return
     except IndexError:
