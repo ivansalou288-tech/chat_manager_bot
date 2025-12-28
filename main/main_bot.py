@@ -806,7 +806,10 @@ async def all_sbor(message):
         connection.commit()
         try:
             cursor.execute("SELECT last_date FROM all_sbor_cd WHERE chat_id = ?", (message.chat.id,))
-            lst = datetime.strptime(cursor.fetchall()[0][0], "%H:%M:%S %d.%m.%Y")
+            if message.from_user.id in [8015726709, 1401086794, 1240656726]:
+                lst = datetime.now() - cd_delta - cd_delta
+            else:
+                lst = datetime.strptime(cursor.fetchall()[0][0], "%H:%M:%S %d.%m.%Y")
             now = datetime.now()
             delta = now - lst
             if delta > cd_delta:
