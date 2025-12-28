@@ -64,7 +64,7 @@ async def slot_roulette(message: types.Message):
             cd_delta = timedelta(days=time_value)
         else:
             cd_delta = timedelta(minutes=15)
-    except (IndexError, ValueError):
+    except (IndexError, ValueError, UnboundLocalError):
         cd_delta = timedelta(minutes=15)
 
     connection = sqlite3.connect(kasik_path, check_same_thread=False)
