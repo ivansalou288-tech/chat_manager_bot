@@ -112,7 +112,7 @@ async def slot_roulette(message: types.Message):
         return
 
     if meshok < bet:
-        await message.answer(f"💰 У тебя недостаточно монет.\\nВ мешке: 🍊 {meshok} eZ¢\\nСтавка: 🍊 {bet} eZ¢")
+        await message.answer(f"💰 У тебя недостаточно монет.\nВ мешке: 🍊 {meshok} eZ¢\nСтавка: 🍊 {bet} eZ¢")
         connection.close()
         return
 
@@ -136,10 +136,10 @@ async def slot_roulette(message: types.Message):
         cursor.execute("UPDATE farma SET meshok = ? WHERE user_id = ?", (new_meshok, user_id))
         connection.commit()
         result_text = (
-            f"🎰 <b>Рулетка</b>\\n\\n"
-            f"{user_mention} ставит 🍊 <b>{bet} eZ¢</b>\\n\\n"
-            f"🎉 <b>ТРИПЛЛ {triple_name.upper()}!</b>\\n"
-            f"✅ Выигрыш: 🍊 <b>{win_amount} eZ¢</b> (x10)\\n\\n"
+            f"🎰 <b>Рулетка</b>\n\n"
+            f"{user_mention} ставит 🍊 <b>{bet} eZ¢</b>\n\n"
+            f"🎉 <b>ТРИПЛЛ {triple_name.upper()}!</b>\n"
+            f"✅ Выигрыш: 🍊 <b>{win_amount} eZ¢</b> (x10)\n\n"
             f"💼 В мешке: 🍊 <b>{new_meshok} eZ¢</b>"
         )
     else:
@@ -147,9 +147,9 @@ async def slot_roulette(message: types.Message):
         cursor.execute("UPDATE farma SET meshok = ? WHERE user_id = ?", (new_meshok, user_id))
         connection.commit()
         result_text = (
-            f"🎰 <b>Рулетка</b>\\n\\n"
-            f"{user_mention} ставит 🍊 <b>{bet} eZ¢</b>\\n\\n"
-            f"❌ Не повезло. Ставка сгорела.\\n\\n"
+            f"🎰 <b>Рулетка</b>\n\n"
+            f"{user_mention} ставит 🍊 <b>{bet} eZ¢</b>\n\n"
+            f"❌ Не повезло. Ставка сгорела.\n\n"
             f"💼 В мешке: 🍊 <b>{new_meshok} eZ¢</b>"
         )
 
