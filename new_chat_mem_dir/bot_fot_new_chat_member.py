@@ -116,6 +116,8 @@ def new_member(call):
 #* RU: Обрабатывает фото-сообщения от пользователей, завершивших процесс вступления в клан, и отправляет им ссылки-приглашения
 @bot.message_handler(content_types=['photo'])
 def get_media(message):
+    if message.chat.id != message.from_user.id:
+        return
     connection = sqlite3.connect(dinamik_path, check_same_thread=False)
     cursor = connection.cursor()
     try:
