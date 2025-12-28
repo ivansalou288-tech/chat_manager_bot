@@ -19,6 +19,7 @@ from modules.message_top import *
 from modules.obvinenie import *
 from modules.rus_rulet import *
 from modules.golden_rulet import *
+from modules.slot_rulet import *
 from modules.who_is_who import *
 from modules.hot_cold import register_hot_cold_handlers
 from modules.bookmarks import *
