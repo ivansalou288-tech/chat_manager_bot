@@ -160,138 +160,87 @@ async def mutes_check(message):
 
 #? EN: Mutes a user in the chat for a specified time with a reason; works only for allowed moderators.
 #* RU: Замьючивает пользователя в чате на заданное время с указанием причины; доступно только разрешённым модераторам.
-@dp.message_handler(Text(startswith='мут', ignore_case=True), content_types=ContentType.TEXT,is_forwarded=False)  # * Мут
+@dp.message_handler(Text(startswith='мут', ignore_case=True), content_types=ContentType.TEXT, is_forwarded=False)
 async def mute(message):
-    global klan, is_auto_unmute
-    if len(message.text.split()[0]) != 3:
+    global is_auto_unmute
+    
+    if len(message.text.split()[0]) != 3 or message.chat.id not in chats:
         return
-    if message.chat.id not in chats:
-        await message.answer('кыш')
+    
+    if message.chat.id == message.from_user.id:
+        await message.answer('📝Эта команда предназначена для использования в групповых чатах, а не в личных сообщениях!')
         return
-
-    try:
-        comments = "\n".join(message.text.split("\n")[1:])
-    except IndexError:
-        comments = ""
-    try:
-        mutetype = message.text.split()[2]
-    except IndexError:
-        mutetype = "час"
-    try:
-        muteint = int(message.text.split()[1])
-
-    except ValueError:
+    
+    # Парсинг аргументов команды
+    parts = message.text.split()
+    muteint = 1
+    mutetype = "час"
+    
+    if len(parts) > 1:
         try:
-            muteint = 1
-            mutetype = message.text.split()[1]
-        except IndexError:
-            mutetype = "час"
-    except IndexError:
-        muteint = 1
-
-    try:
-        print(mutetype.split('@')[1])
+            muteint = int(parts[1])
+            mutetype = parts[2] if len(parts) > 2 else "час"
+        except ValueError:
+            mutetype = parts[1]
+    
+    # Проверка на упоминание пользователя в типе мута
+    if '@' in mutetype:
         mutetype = 'час'
-    except:
-        pass
-    if int(muteint) > 100:
+    
+    # Валидация времени мута
+    if muteint > 100:
         await message.reply('Слишком большое число! \n Делай меньше!')
         return
     if muteint <= 0:
         await message.reply('Неверное значение времени мута')
         return
-
-    # * if len(message.text.split()[1:]) > 0 and message.text.split()[1] != mutetype and message.text.split()[1] != str(muteint):
-    # *     try:
-    # *         if message.text.split()[2] == mutetype:
-    # *             pass
-    # *         else:
-    # *             try:
-    # *                 print('True')
-    # *                 print(' '.join(message.text.split()[0:]))
-    # *                 if ' '.join(message.text.split()[0:]) != message.text.split('\n')[0]:
-    # *                     print('..........')
-    # *             except IndexError:
-    # *                 pass
-    # *             print("---------------------")
-    # *     except IndexError:
-    # *         pass
-    if len(message.text) > 0:
-        a = ' '.join(message.text.split()[1:])
-        print('text1', a)
-        comm = ' '.join(message.text.split('\n')[1:])
-        comm = ' '.join(comm.split())
-        if comm == '':
-            pass
-        elif comm == a:
-            pass
-        else:
-            print('text', comm)
-
-            print((' '.join(a.split(comm))).strip())
-
-
-
-
-
-
-
-
-    if message.chat.id == message.from_user.id:
-        await message.answer(
-            '📝Эта команда предназначена для использования в групповых чатах, а не в личных сообщениях!')
-        return
-    connection = sqlite3.connect(main_path, check_same_thread=False)
-    cursor = connection.cursor()
+    
+    # Извлечение комментария
+    comments = "\n".join(message.text.split("\n")[1:]).strip()
+    
+    # Проверка прав модератора
     moder_id = message.from_user.id
     moder_link = message.from_user.get_mention(as_html=True)
-    if await is_successful_moder(moder_id, message.chat.id, 'mut') == False:
+    
+    moder_status = await is_successful_moder(moder_id, message.chat.id, 'mut')
+    if moder_status == False:
         await message.reply('📝Ранг модератора не достаточен для использования этой команды')
         return
-    elif await is_successful_moder(moder_id, message.chat.id, 'mut') == 'Need reg':
+    elif moder_status == 'Need reg':
         await message.reply(
             '📝Для использования бота нужно зарегистрироваться\n\n💬<i>Для регистрации напиши @zzoobank, он все объяснит</i>',
             parse_mode='html')
         return
-
-
+    
+    # Получение информации о пользователе
     user_id = GetUserByMessage(message).user_id
-    if user_id == False:
-        
-        await message.reply('📝Невозможно найти информацию о пользователе\n\n💬Введите корректный юзернейм(<code>@</code><i>юзер</i>), тг айди (<code>@</code><i>айди</i>) или ответь на сообщение',parse_mode='html')
+    if not user_id:
+        await message.reply(
+            '📝Невозможно найти информацию о пользователе\n\n💬Введите корректный юзернейм(<code>@</code><i>юзер</i>), тг айди (<code>@</code><i>айди</i>) или ответь на сообщение',
+            parse_mode='html')
         return
-
+    
     name_user = GetUserByID(user_id).nik
-
-    if await is_more_moder(user_id, moder_id, message.chat.id) == False:
+    
+    if not await is_more_moder(user_id, moder_id, message.chat.id):
         await message.reply('Нельзя использовать эту команду по отношению к старшему или равному модеру')
         return
-    # * ------------------------------------------------------------------------------------------------
-
-    a = await mute_user(user_id, message.chat.id, muteint, mutetype, message, comments)
-    if a == True:
-        try:
-            if mutetype == comments.split()[0]:
-                mutetype = 'час'
-        except IndexError:
-            mutetype = 'час'
+    
+    # Выполнение мута
+    result = await mute_user(user_id, message.chat.id, muteint, mutetype, message, comments)
+    
+    if result == True:
         await message.reply(
-            f'🔇<b>Нарушитель:</b> <a href="tg://user?id={user_id}">{name_user}</a> лишается права слова\n⏰<b>Срок наказания:</b> {muteint} {mutetype}\n<b>👿Наказал его:</b> {moder_link}\n💬<b>Нарушение: {comments}</b>',
+            f'🔇<b>Нарушитель:</b> <a href="tg://user?id={user_id}">{name_user}</a> лишается права слова\n'
+            f'⏰<b>Срок наказания:</b> {muteint} {mutetype}\n'
+            f'👿<b>Наказал его:</b> {moder_link}\n'
+            f'💬<b>Нарушение: {comments}</b>',
             parse_mode='html')
-        if is_auto_unmute == False:
-            await auto_unmute(message)
-        return
-
-    elif a == False:
-        if is_auto_unmute == False:
-            await auto_unmute(message)
-        return
-
-    else:
-        await message.reply(a)
-        if is_auto_unmute == False:
-            await auto_unmute(message)
-        return
+    elif result != False:
+        await message.reply(result)
+    
+    if not is_auto_unmute:
+        await auto_unmute(message)
 
 
 #? EN: Unmutes a user in the chat, returning them the ability to write messages.
