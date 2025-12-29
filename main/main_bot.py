@@ -248,8 +248,12 @@ async def mute(message):
 @dp.message_handler(Text(startswith=['анмут', "размут"], ignore_case=True),
                     content_types=ContentType.TEXT,is_forwarded=False)  # * Функция размута
 async def unmute(message):
-    if len(message.text.split()[0]) > 6:
+    # Проверка команды (unmute = 6 символов)
+    command = message.text.split()[0].lower()
+    if len(command) > 6:
         return
+    
+    # Проверка, что команда используется в групповом чате
     if message.chat.id not in chats:
         await message.answer('кыш')
         return
@@ -265,52 +269,72 @@ async def unmute(message):
         await message.answer(
             '📝Эта команда предназначена для использования в групповых чатах, а не в личных сообщениях!')
         return
-    connection = sqlite3.connect(main_path, check_same_thread=False)
-    cursor = connection.cursor()
+    
+    # Проверка прав модератора
     moder_id = message.from_user.id
-    moder_link = message.from_user.get_mention(as_html=True)
-    if await is_successful_moder(moder_id, message.chat.id, 'mut') == False:
+    moder_permission = await is_successful_moder(moder_id, message.chat.id, 'mut')
+    
+    if moder_permission == False:
         await message.reply('📝Ранг модератора не достаточен для использования этой команды')
         return
-    elif await is_successful_moder(moder_id, message.chat.id, 'mut') == 'Need reg':
+    
+    if moder_permission == 'Need reg':
         await message.reply(
             '📝Для использования бота нужно зарегистрироваться\n\n💬<i>Для регистрации напиши @zzoobank, он все объяснит</i>',
             parse_mode='html')
         return
-
-
-    user_id = GetUserByMessage(message).user_id
-    if user_id == False:
-        
-        await message.reply('📝Невозможно найти информацию о пользователе\n\n💬Введите корректный юзернейм(<code>@</code><i>юзер</i>), тг айди (<code>@</code><i>айди</i>) или ответь на сообщение',parse_mode='html')
+    
+    # Получение информации о пользователе
+    user_info = GetUserByMessage(message)
+    if not user_info or not user_info.user_id:
+        await message.reply(
+            '📝Невозможно найти информацию о пользователе\n\n💬Введите корректный юзернейм(<code>@</code><i>юзер</i>), тг айди (<code>@</code><i>айди</i>) или ответь на сообщение',
+            parse_mode='html')
         return
-
-    name_user = GetUserByID(user_id).nik
-
-
-
+    
+    user_id = user_info.user_id
+    
+    # Проверка, что нельзя использовать команду на старшего/равного модератора
     if await is_more_moder(user_id, moder_id, message.chat.id) == False:
         await message.reply('Нельзя использовать эту команду по отношению к старшему или равному модеру')
         return
-    # * ----------------------------------------------------------------------------------------------------
-
-    a = await unmute_user(user_id, message.chat.id, message)
-    if a == True:
-        await message.reply(
-            f'🔊<a href="tg://user?id={user_id}">{name_user}</a> можешь говорить, но будь аккуратнее впредь\n\n❗️Правила чата можно посмотреть по команде «<code>правила</code>»',
-            parse_mode='html')
-    else:
-        await message.reply(a)
-
-    connection.commit()
+    
+    # Получение имени пользователя
+    user_data = GetUserByID(user_id)
+    name_user = user_data.nik if user_data else "Неизвестный"
+    
+    # Подключение к базе данных
+    connection = None
+    try:
+        connection = sqlite3.connect(main_path, check_same_thread=False)
+        cursor = connection.cursor()
+        
+        # Выполнение unmute
+        result = await unmute_user(user_id, message.chat.id, message)
+        
+        if result == True:
+            await message.reply(
+                f'🔊<a href="tg://user?id={user_id}">{name_user}</a> можешь говорить, но будь аккуратнее впредь\n\n❗️Правила чата можно посмотреть по команде «<code>правила</code>»',
+                parse_mode='html')
+        else:
+            await message.reply(result)
+        
+        connection.commit()
+    finally:
+        if connection:
+            connection.close()
 
 
 #? EN: Permanently bans a user from the chat with a specified reason; only for moderators with sufficient rank.
 #* RU: Навсегда банит пользователя в чате с указанием причины; доступно только модераторам с достаточным рангом.
 @dp.message_handler(Text(startswith='бан', ignore_case=True), content_types=ContentType.TEXT,is_forwarded=False)  # * Функция бана
 async def ban(message):
-    if len(message.text.split()[0]) != 3:
+    # Проверка команды (бан = 3 символа)
+    command = message.text.split()[0].lower()
+    if len(command) != 3:
         return
+    
+    # Проверка, что команда используется в групповом чате
     if message.chat.id not in chats:
         await message.answer('кыш')
         return
@@ -336,45 +360,66 @@ async def ban(message):
         await message.answer(
             '📝Эта команда предназначена для использования в групповых чатах, а не в личных сообщениях!')
         return
-    connection = sqlite3.connect(main_path, check_same_thread=False)
-    cursor = connection.cursor()
+    
+    # Проверка прав модератора
     moder_id = message.from_user.id
     moder_link = message.from_user.get_mention(as_html=True)
-    if await is_successful_moder(moder_id, message.chat.id, 'ban') == False:
+    moder_permission = await is_successful_moder(moder_id, message.chat.id, 'ban')
+    
+    if moder_permission == False:
         await message.reply('📝Ранг модератора не достаточен для использования этой команды')
         return
-    elif await is_successful_moder(moder_id, message.chat.id, 'ban') == 'Need reg':
+    
+    if moder_permission == 'Need reg':
         await message.reply(
             '📝Для использования бота нужно зарегистрироваться\n\n💬<i>Для регистрации напиши @zzoobank, он все объяснит</i>',
             parse_mode='html')
         return
-    try:
-        comments = "".join(message.text.split("\n")[1:])
-    except IndexError:
-        comments = ""
-    user_id = await get_user_id(message)
-
-    user_id = GetUserByMessage(message).user_id
-    if user_id == False:
-        
-        await message.reply('📝Невозможно найти информацию о пользователе\n\n💬Введите корректный юзернейм(<code>@</code><i>юзер</i>), тг айди (<code>@</code><i>айди</i>) или ответь на сообщение',parse_mode='html')
+    
+    # Извлечение причины бана (текст после переноса строки)
+    text_lines = message.text.split('\n')
+    comments = '\n'.join(text_lines[1:]).strip() if len(text_lines) > 1 else ""
+    
+    # Получение информации о пользователе
+    user_info = GetUserByMessage(message)
+    if not user_info or not user_info.user_id:
+        await message.reply(
+            '📝Невозможно найти информацию о пользователе\n\n💬Введите корректный юзернейм(<code>@</code><i>юзер</i>), тг айди (<code>@</code><i>айди</i>) или ответь на сообщение',
+            parse_mode='html')
         return
-
-    name_user = GetUserByID(user_id).nik
-
-
+    
+    user_id = user_info.user_id
+    
+    # Проверка, что нельзя использовать команду на старшего/равного модератора
     if await is_more_moder(user_id, moder_id, message.chat.id) == False:
         await message.reply('Нельзя использовать эту команду по отношению к старшему или равному модеру')
         return
-
+    
+    # Получение имени пользователя
+    user_data = GetUserByID(user_id)
+    name_user = user_data.nik if user_data else "Неизвестный"
+    
+    # Подготовка данных для бана
     user_men = f'<a href="tg://user?id={user_id}">{name_user}</a>'
     moder_men = moder_link
     message_id = message.message_id
-    # * ----------------------------------------------------------------------------------------------
-    if await ban_user(user_id, message.chat.id, user_men, moder_men, comments, message_id, message) == True:
-        await message.reply(
-            f'<b>❗️Внимание❗️</b>\n🔴Злостный нарушитель <a href="tg://user?id={user_id}">{name_user}</a> получает бан и покидает нас\n👮‍♂️Выгнал его: {moder_link}\n💬Выгнали его за: {comments}',
-            parse_mode='html')
+    
+    # Подключение к базе данных
+    connection = None
+    try:
+        connection = sqlite3.connect(main_path, check_same_thread=False)
+        cursor = connection.cursor()
+        
+        # Выполнение бана
+        result = await ban_user(user_id, message.chat.id, user_men, moder_men, comments, message_id, message)
+        
+        if result == True:
+            await message.reply(
+                f'<b>❗️Внимание❗️</b>\n🔴Злостный нарушитель <a href="tg://user?id={user_id}">{name_user}</a> получает бан и покидает нас\n👮‍♂️Выгнал его: {moder_link}\n💬Выгнали его за: {comments}',
+                parse_mode='html')
+    finally:
+        if connection:
+            connection.close()
 
 
 #? EN: Shows detailed information about why a user was banned (reason, date, moderator, PUBG ID, and link to the message).
