@@ -4,7 +4,7 @@ import sqlite3
 from datetime import datetime, timedelta
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
+import asyncio
 from aiogram import types
 from aiogram.dispatcher.filters import Text
 from aiogram.types import ContentType, ParseMode
@@ -23,6 +23,7 @@ TRIPLES = {1: "бар", 64: "777", 22: "ягоды", 43: "лимон"}
     is_forwarded=False,
 )
 async def slot_roulette(message: types.Message):
+    X_BET = 10
     connection = sqlite3.connect(main_path, check_same_thread=False)
     cursor = connection.cursor()
     black_list = []
@@ -141,7 +142,7 @@ async def slot_roulette(message: types.Message):
     triple_name = TRIPLES.get(dice_value)
     
     if triple_name:
-        win_amount = bet * 10
+        win_amount = bet*X_BET
         new_meshok = meshok + win_amount
         cursor.execute("UPDATE farma SET meshok = ? WHERE user_id = ?", (new_meshok, user_id))
         connection.commit()
@@ -149,7 +150,7 @@ async def slot_roulette(message: types.Message):
             f"🎰 <b>Рулетка</b>\n\n"
             f"{user_mention} ставит 🍊 <b>{bet} eZ¢</b>\n\n"
             f"🎉 <b>ТРИПЛЛ {triple_name.upper()}!</b>\n"
-            f"✅ Выигрыш: 🍊 <b>{win_amount} eZ¢</b> (x10)\n\n"
+            f"✅ Выигрыш: 🍊 <b>{win_amount} eZ¢</b> (x{X_BET})\n\n"
             f"💼 В мешке: 🍊 <b>{new_meshok} eZ¢</b>"
         )
     else:
@@ -162,6 +163,6 @@ async def slot_roulette(message: types.Message):
             f"❌ Не повезло. Ставка сгорела.\n\n"
             f"💼 В мешке: 🍊 <b>{new_meshok} eZ¢</b>"
         )
-
+    await asyncio.sleep(2)
     connection.close()
     await bot.send_message(message.chat.id, result_text, parse_mode=ParseMode.HTML)
