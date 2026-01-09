@@ -95,6 +95,12 @@ def init_db():
         action TEXT,
         created TEXT
     )''')
+    cursor.execute('''CREATE TABLE IF NOT EXISTS main_relationships (
+        chat_id INTEGER,
+        user_id INTEGER,
+        partner_id INTEGER,
+        PRIMARY KEY (chat_id, user_id)
+    )''')
     conn.commit()
     conn.close()
 
@@ -211,12 +217,50 @@ async def delete_relationship(message):
     
     await message.reply('💔 Отношения разорваны')
 
-@dp.message_handler(Text(equals=['отн действия'], ignore_case=True), content_types=ContentType.TEXT, is_forwarded=False)
-async def show_actions(message):
+@dp.message_handler(Text(startswith=['отн основа'], ignore_case=True), content_types=ContentType.TEXT, is_forwarded=False)
+async def set_main_relationship(message):
     user_from = GetUserByMessage(message)
     if not user_from.user_id:
         await message.reply('📝 Укажите пользователя через @username или ответьте на сообщение')
         return
+    
+    conn = sqlite3.connect(main_path, check_same_thread=False)
+    cursor = conn.cursor()
+    
+    user1_id = min(message.from_user.id, user_from.user_id)
+    user2_id = max(message.from_user.id, user_from.user_id)
+    
+    rel = cursor.execute('SELECT * FROM relationships WHERE chat_id=? AND user1_id=? AND user2_id=?',
+                        (message.chat.id, user1_id, user2_id)).fetchone()
+    
+    if not rel:
+        await message.reply('❌ У вас нет отношений с этим пользователем!')
+        conn.close()
+        return
+    
+    cursor.execute('INSERT OR REPLACE INTO main_relationships VALUES (?,?,?)',
+                  (message.chat.id, message.from_user.id, user_from.user_id))
+    conn.commit()
+    conn.close()
+    
+    await message.reply(f'✅ Основные отношения установлены с <a href="tg://user?id={user_from.user_id}">{user_from.name}</a>', parse_mode='html')
+
+@dp.message_handler(Text(equals=['отн действия'], ignore_case=True), content_types=ContentType.TEXT, is_forwarded=False)
+async def show_actions(message):
+    user_from = GetUserByMessage(message)
+    if not user_from.user_id:
+        conn = sqlite3.connect(main_path, check_same_thread=False)
+        cursor = conn.cursor()
+        main_rel = cursor.execute('SELECT partner_id FROM main_relationships WHERE chat_id=? AND user_id=?',
+                                 (message.chat.id, message.from_user.id)).fetchone()
+        conn.close()
+        
+        if not main_rel:
+            await message.reply('📝 Укажите пользователя через @username или ответьте на сообщение')
+            return
+        
+        user_from.user_id = main_rel[0]
+        user_from.name = GetUserByID(main_rel[0]).name
     
     conn = sqlite3.connect(main_path, check_same_thread=False)
     cursor = conn.cursor()
@@ -246,8 +290,18 @@ async def show_actions(message):
 async def do_action(message):
     user_from = GetUserByMessage(message)
     if not user_from.user_id:
-        await message.reply('📝 Укажите пользователя через @username или ответьте на сообщение')
-        return
+        conn = sqlite3.connect(main_path, check_same_thread=False)
+        cursor = conn.cursor()
+        main_rel = cursor.execute('SELECT partner_id FROM main_relationships WHERE chat_id=? AND user_id=?',
+                                 (message.chat.id, message.from_user.id)).fetchone()
+        conn.close()
+        
+        if not main_rel:
+            await message.reply('📝 Укажите пользователя через @username или ответьте на сообщение')
+            return
+        
+        user_from.user_id = main_rel[0]
+        user_from.name = GetUserByID(main_rel[0]).name
     
     action_name = message.text.lower().replace('отн ', '').strip()
     
