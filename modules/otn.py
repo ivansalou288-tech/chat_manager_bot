@@ -270,16 +270,6 @@ async def do_action(message):
         conn.close()
         return
     
-    try:
-        meshok = cursor.execute('SELECT meshok FROM farma WHERE user_id=?', (message.from_user.id,)).fetchone()[0]
-    except:
-        meshok = 0
-    
-    if meshok < action['cost']:
-        await message.reply(f'❌ Недостаточно средств! Нужно {action["cost"]} i¢')
-        conn.close()
-        return
-    
     cooldown = cursor.execute('SELECT last_used FROM relationship_cooldowns WHERE chat_id=? AND user1_id=? AND user2_id=? AND action=?',
                              (message.chat.id, user1_id, user2_id, action_name)).fetchone()
     
@@ -287,7 +277,10 @@ async def do_action(message):
         last_used = datetime.strptime(cooldown[0], '%H:%M:%S %d.%m.%Y')
         if datetime.now() - last_used < timedelta(seconds=action['cooldown']):
             remaining = timedelta(seconds=action['cooldown']) - (datetime.now() - last_used)
-            await message.reply(f'⏳ Действие на кулдауне! Осталось {remaining.seconds // 60} мин')
+            keyboard = types.InlineKeyboardMarkup()
+            keyboard.add(types.InlineKeyboardButton(f"💰 Использовать за {action['cost']} i¢", 
+                                                    callback_data=f"rel_pay_{user1_id}_{user2_id}_{action_name}"))
+            await message.reply(f'⏳ Действие на кулдауне! Осталось {remaining.seconds // 60} мин', reply_markup=keyboard)
             conn.close()
             return
     
@@ -296,7 +289,6 @@ async def do_action(message):
     
     cursor.execute('UPDATE relationships SET points=?, level=?, interactions=interactions+1 WHERE chat_id=? AND user1_id=? AND user2_id=?',
                   (new_points, new_level, message.chat.id, user1_id, user2_id))
-    cursor.execute('UPDATE farma SET meshok=meshok-? WHERE user_id=?', (action['cost'], message.from_user.id))
     cursor.execute('INSERT OR REPLACE INTO relationship_cooldowns VALUES (?,?,?,?,?)',
                   (message.chat.id, user1_id, user2_id, action_name, datetime.now().strftime('%H:%M:%S %d.%m.%Y')))
     
@@ -309,9 +301,64 @@ async def do_action(message):
     
     await message.reply(
         f'✅ Действие выполнено!\n'
+        f'💕 +{action["points"]} очков{level_up}'
+    )
+
+@dp.callback_query_handler(lambda c: c.data.startswith('rel_pay_'))
+async def pay_for_action(call: types.CallbackQuery):
+    _, _, user1_id, user2_id, action_name = call.data.split('_', 4)
+    user1_id, user2_id = int(user1_id), int(user2_id)
+    
+    if call.from_user.id not in [user1_id, user2_id]:
+        await bot.answer_callback_query(call.id, '❌ Эта кнопка не для тебя!', show_alert=True)
+        return
+    
+    action = ACTIONS[action_name]
+    
+    conn = sqlite3.connect(main_path, check_same_thread=False)
+    cursor = conn.cursor()
+    
+    try:
+        meshok = cursor.execute('SELECT meshok FROM farma WHERE user_id=?', (call.from_user.id,)).fetchone()[0]
+    except:
+        meshok = 0
+    
+    if meshok < action['cost']:
+        await bot.answer_callback_query(call.id, f'❌ Недостаточно средств! Нужно {action["cost"]} i¢', show_alert=True)
+        conn.close()
+        return
+    
+    rel = cursor.execute('SELECT points, level FROM relationships WHERE chat_id=? AND user1_id=? AND user2_id=?',
+                        (call.message.chat.id, user1_id, user2_id)).fetchone()
+    
+    if not rel:
+        await bot.answer_callback_query(call.id, '❌ Отношения не найдены!', show_alert=True)
+        conn.close()
+        return
+    
+    points, level = rel
+    new_points = points + action['points']
+    new_level = get_level_by_points(new_points)
+    
+    cursor.execute('UPDATE relationships SET points=?, level=?, interactions=interactions+1 WHERE chat_id=? AND user1_id=? AND user2_id=?',
+                  (new_points, new_level, call.message.chat.id, user1_id, user2_id))
+    cursor.execute('UPDATE farma SET meshok=meshok-? WHERE user_id=?', (action['cost'], call.from_user.id))
+    cursor.execute('INSERT OR REPLACE INTO relationship_cooldowns VALUES (?,?,?,?,?)',
+                  (call.message.chat.id, user1_id, user2_id, action_name, datetime.now().strftime('%H:%M:%S %d.%m.%Y')))
+    
+    conn.commit()
+    conn.close()
+    
+    level_up = ''
+    if new_level > level:
+        level_up = f'\n🎉 Новый уровень: {LEVELS[new_level]["name"]}!'
+    
+    await call.message.edit_text(
+        f'✅ Действие выполнено за монетки!\n'
         f'💕 +{action["points"]} очков\n'
         f'💰 -{action["cost"]} i¢{level_up}'
     )
+    await bot.answer_callback_query(call.id)
 
 @dp.message_handler(Text(equals=['отны'], ignore_case=True), content_types=ContentType.TEXT, is_forwarded=False)
 async def show_relationships(message):
