@@ -30,11 +30,11 @@ ACTIONS = {
     "гулять за ручки": {"points": 100, "cost": 50, "level": 2, "cooldown": 1800},
     "подарить конфеты": {"points": 100, "cost": 50, "level": 2, "cooldown": 1800},
     "сделать завтрак": {"points": 100, "cost": 50, "level": 2, "cooldown": 1800},
-    "пригласить погулять": {"points": 70, "cost": 35, "level": 1, "cooldown": 900},
-    "нежно обнять": {"points": 50, "cost": 25, "level": 1, "cooldown": 900},
-    "подарить шоколадку": {"points": 50, "cost": 25, "level": 1, "cooldown": 900},
-    "обнимать": {"points": 30, "cost": 15, "level": 1, "cooldown": 900},
-    "поговорить": {"points": 30, "cost": 15, "level": 1, "cooldown": 900},
+    "пригласить погулять": {"points": 70, "cost": 35, "level": 0, "cooldown": 900},
+    "нежно обнять": {"points": 50, "cost": 25, "level": 0, "cooldown": 900},
+    "подарить шоколадку": {"points": 50, "cost": 25, "level": 0, "cooldown": 900},
+    "обнимать": {"points": 30, "cost": 15, "level": 0, "cooldown": 900},
+    "поговорить": {"points": 30, "cost": 15, "level": 0, "cooldown": 900},
     "кинуть мем": {"points": 20, "cost": 10, "level": 0, "cooldown": 600},
     "поделиться едой": {"points": 20, "cost": 10, "level": 0, "cooldown": 600},
     "рассказать анекдот": {"points": 10, "cost": 5, "level": 0, "cooldown": 600},
@@ -363,14 +363,22 @@ async def do_action(message):
     conn.commit()
     conn.close()
     
-    level_up = ''
     if new_level > level:
-        level_up = f'\n🎉 Новый уровень: {LEVELS[new_level]["name"]}!'
-    
-    await message.reply(
-        f'✅ Действие выполнено!\n'
-        f'💕 +{action["points"]} очков{level_up}'
-    )
+        user1 = GetUserByID(user1_id)
+        user2 = GetUserByID(user2_id)
+        await message.reply(
+            f'🎉 Поздравляем!\n'
+            f'💕 <a href="tg://user?id={user1_id}">{user1.name}</a> и '
+            f'<a href="tg://user?id={user2_id}">{user2.name}</a> достигли нового уровня!\n'
+            f'⭐ {LEVELS[new_level]["name"]} (уровень {new_level})\n'
+            f'💫 Очки: {new_points}',
+            parse_mode='html'
+        )
+    else:
+        await message.reply(
+            f'✅ Действие выполнено!\n'
+            f'💕 +{action["points"]} очков'
+        )
 
 @dp.callback_query_handler(lambda c: c.data.startswith('rp_'))
 async def pay_for_action(call: types.CallbackQuery):
@@ -426,16 +434,25 @@ async def pay_for_action(call: types.CallbackQuery):
     conn.commit()
     conn.close()
     
-    level_up = ''
-    if new_level > level:
-        level_up = f'\n🎉 Новый уровень: {LEVELS[new_level]["name"]}!'
-    
     await call.message.edit_text(
         f'✅ Действие выполнено за монетки!\n'
         f'💕 +{action["points"]} очков\n'
-        f'💰 -{action["cost"]} i¢{level_up}'
+        f'💰 -{action["cost"]} i¢'
     )
     await bot.answer_callback_query(call.id)
+    
+    if new_level > level:
+        user1 = GetUserByID(user1_id)
+        user2 = GetUserByID(user2_id)
+        await bot.send_message(
+            chat_id,
+            f'🎉 Поздравляем!\n'
+            f'💕 <a href="tg://user?id={user1_id}">{user1.name}</a> и '
+            f'<a href="tg://user?id={user2_id}">{user2.name}</a> достигли нового уровня!\n'
+            f'⭐ {LEVELS[new_level]["name"]} (уровень {new_level})\n'
+            f'💫 Очки: {new_points}',
+            parse_mode='html'
+        )
 
 @dp.message_handler(Text(equals=['отны'], ignore_case=True), content_types=ContentType.TEXT, is_forwarded=False)
 async def show_relationships(message):
