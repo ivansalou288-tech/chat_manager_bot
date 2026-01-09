@@ -87,6 +87,14 @@ def init_db():
         last_used TEXT,
         PRIMARY KEY (chat_id, user1_id, user2_id, action)
     )''')
+    cursor.execute('''CREATE TABLE IF NOT EXISTS rel_temp_actions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        chat_id INTEGER,
+        user1_id INTEGER,
+        user2_id INTEGER,
+        action TEXT,
+        created TEXT
+    )''')
     conn.commit()
     conn.close()
 
@@ -277,9 +285,15 @@ async def do_action(message):
         last_used = datetime.strptime(cooldown[0], '%H:%M:%S %d.%m.%Y')
         if datetime.now() - last_used < timedelta(seconds=action['cooldown']):
             remaining = timedelta(seconds=action['cooldown']) - (datetime.now() - last_used)
+            
+            cursor.execute('INSERT INTO rel_temp_actions (chat_id, user1_id, user2_id, action, created) VALUES (?,?,?,?,?)',
+                          (message.chat.id, user1_id, user2_id, action_name, datetime.now().strftime('%H:%M:%S %d.%m.%Y')))
+            conn.commit()
+            temp_id = cursor.lastrowid
+            
             keyboard = types.InlineKeyboardMarkup()
             keyboard.add(types.InlineKeyboardButton(f"💰 Использовать за {action['cost']} i¢", 
-                                                    callback_data=f"rel_pay_{user1_id}_{user2_id}_{action_name}"))
+                                                    callback_data=f"rp_{temp_id}"))
             await message.reply(f'⏳ Действие на кулдауне! Осталось {remaining.seconds // 60} мин', reply_markup=keyboard)
             conn.close()
             return
@@ -304,19 +318,27 @@ async def do_action(message):
         f'💕 +{action["points"]} очков{level_up}'
     )
 
-@dp.callback_query_handler(lambda c: c.data.startswith('rel_pay_'))
+@dp.callback_query_handler(lambda c: c.data.startswith('rp_'))
 async def pay_for_action(call: types.CallbackQuery):
-    _, _, user1_id, user2_id, action_name = call.data.split('_', 4)
-    user1_id, user2_id = int(user1_id), int(user2_id)
-    
-    if call.from_user.id not in [user1_id, user2_id]:
-        await bot.answer_callback_query(call.id, '❌ Эта кнопка не для тебя!', show_alert=True)
-        return
-    
-    action = ACTIONS[action_name]
+    temp_id = int(call.data.split('_')[1])
     
     conn = sqlite3.connect(main_path, check_same_thread=False)
     cursor = conn.cursor()
+    
+    temp_data = cursor.execute('SELECT chat_id, user1_id, user2_id, action FROM rel_temp_actions WHERE id=?', (temp_id,)).fetchone()
+    if not temp_data:
+        await bot.answer_callback_query(call.id, '❌ Действие устарело!', show_alert=True)
+        conn.close()
+        return
+    
+    chat_id, user1_id, user2_id, action_name = temp_data
+    
+    if call.from_user.id not in [user1_id, user2_id]:
+        await bot.answer_callback_query(call.id, '❌ Эта кнопка не для тебя!', show_alert=True)
+        conn.close()
+        return
+    
+    action = ACTIONS[action_name]
     
     try:
         meshok = cursor.execute('SELECT meshok FROM farma WHERE user_id=?', (call.from_user.id,)).fetchone()[0]
@@ -329,7 +351,7 @@ async def pay_for_action(call: types.CallbackQuery):
         return
     
     rel = cursor.execute('SELECT points, level FROM relationships WHERE chat_id=? AND user1_id=? AND user2_id=?',
-                        (call.message.chat.id, user1_id, user2_id)).fetchone()
+                        (chat_id, user1_id, user2_id)).fetchone()
     
     if not rel:
         await bot.answer_callback_query(call.id, '❌ Отношения не найдены!', show_alert=True)
@@ -341,10 +363,11 @@ async def pay_for_action(call: types.CallbackQuery):
     new_level = get_level_by_points(new_points)
     
     cursor.execute('UPDATE relationships SET points=?, level=?, interactions=interactions+1 WHERE chat_id=? AND user1_id=? AND user2_id=?',
-                  (new_points, new_level, call.message.chat.id, user1_id, user2_id))
+                  (new_points, new_level, chat_id, user1_id, user2_id))
     cursor.execute('UPDATE farma SET meshok=meshok-? WHERE user_id=?', (action['cost'], call.from_user.id))
     cursor.execute('INSERT OR REPLACE INTO relationship_cooldowns VALUES (?,?,?,?,?)',
-                  (call.message.chat.id, user1_id, user2_id, action_name, datetime.now().strftime('%H:%M:%S %d.%m.%Y')))
+                  (chat_id, user1_id, user2_id, action_name, datetime.now().strftime('%H:%M:%S %d.%m.%Y')))
+    cursor.execute('DELETE FROM rel_temp_actions WHERE id=?', (temp_id,))
     
     conn.commit()
     conn.close()
