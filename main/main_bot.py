@@ -23,6 +23,8 @@ from modules.slot_rulet import *
 from modules.who_is_who import *
 from modules.hot_cold import register_hot_cold_handlers
 from modules.bookmarks import *
+from modules.otn import *
+
   # Import to register all handlers
 
 register_hot_cold_handlers(dp)
