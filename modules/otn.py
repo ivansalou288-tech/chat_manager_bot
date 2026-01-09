@@ -153,7 +153,7 @@ async def accept_relationship(call: types.CallbackQuery):
     _, _, user1_id, user2_id, initiator_id = call.data.split('_')
     user1_id, user2_id, initiator_id = int(user1_id), int(user2_id), int(initiator_id)
     
-    target_id = user1_id if call.from_user.id == user2_id else user2_id
+    target_id = user2_id if initiator_id == user1_id else user1_id
     if call.from_user.id != target_id:
         await bot.answer_callback_query(call.id, '❌ Эта кнопка не для тебя!', show_alert=True)
         return
@@ -175,7 +175,7 @@ async def decline_relationship(call: types.CallbackQuery):
     _, _, user1_id, user2_id, initiator_id = call.data.split('_')
     user1_id, user2_id, initiator_id = int(user1_id), int(user2_id), int(initiator_id)
     
-    target_id = user1_id if call.from_user.id == user2_id else user2_id
+    target_id = user2_id if initiator_id == user1_id else user1_id
     if call.from_user.id != target_id:
         await bot.answer_callback_query(call.id, '❌ Эта кнопка не для тебя!', show_alert=True)
         return
