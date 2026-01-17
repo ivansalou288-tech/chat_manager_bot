@@ -2977,23 +2977,31 @@ async def id_user_check(message: types.Message):
     if message.chat.id not in chats:
         await message.answer('кыш')
         return
-    try:
-        username = (message.text.split('@')[1]).split()[0]
-        tg_id = cursor.execute(f"SELECT tg_id FROM [{-(message.chat.id)}] WHERE username=?", (username,)).fetchall()[0][
-            0]
-        name_user = (await bot.get_chat_member(message.chat.id, tg_id))['user']['first_name']
-    except IndexError:
-        if message.reply_to_message:
-            tg = message.reply_to_message.from_user
-            tg_id = tg.id
-            name_user = tg.first_name
-            username = tg.username
-        else:
-            tg = message.from_user
-            tg_id = tg.id
-            name_user = tg.first_name
-            username = tg.username
-
+    # try:
+    #     username = (message.text.split('@')[1]).split()[0]
+    #     tg_id = cursor.execute(f"SELECT tg_id FROM [{-(message.chat.id)}] WHERE username=?", (username,)).fetchall()[0][0]
+    #     try:
+    #         name_user = (await bot.get_chat_member(message.chat.id, tg_id))['user']['first_name']
+    #     except Exception:
+    #         name_user = 'Неизвестно'
+    # except IndexError:
+    #     if message.reply_to_message:
+    #         tg = message.reply_to_message.from_user
+    #         tg_id = tg.id
+    #         name_user = tg.first_name
+    #         username = tg.username
+    #     else:
+    #         tg = message.from_user
+    #         tg_id = tg.id
+    #         name_user = tg.first_name
+    #         username = tg.username
+    username = GetUserByMessage(message).username
+    user_id = GetUserByMessage(message).user_id
+    if user_id == False:                                
+        await message.reply('📝Невозможно найти информацию о пользователе\n\n💬Введите корректный юзернейм(<code>@</code><i>юзер</i>) или ответь на сообщение',parse_mode='html')
+        return
+    name_user = GetUserByID(user_id).nik
+    tg_id=user_id
     await message.answer(
         f'👤 Пользователь <a href="https://t.me/{username}">{name_user}</a>\n🆔 равен @<code>{tg_id}</code>',
         parse_mode='html', disable_web_page_preview=True)
