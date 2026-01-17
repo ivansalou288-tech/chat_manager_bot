@@ -439,7 +439,7 @@ async def prich_ban(message):
         return
     connection = sqlite3.connect(main_path, check_same_thread=False)
     cursor = connection.cursor()
-    user_id = await GetUserByMessage(message)
+    user_id = GetUserByMessage(message)
 
  
     try:
@@ -985,6 +985,126 @@ async def warnUser(message: types.Message):
         warns = await warns_check(message)
         print(warns)
         await limit_warns(message)
+
+
+#? EN: Shows a paginated list of all banned users in the chat with ban details.
+#* RU: Показывает постраничный список всех забаненных пользователей в чате с деталями бана.
+@dp.message_handler(Text(startswith=['банлист'], ignore_case=True), content_types=ContentType.TEXT, is_forwarded=False)
+async def ban_list(message: types.Message):
+    if len(message.text.split()[0]) != 7:
+        return
+    if message.chat.id not in chats:
+        await message.answer('кыш')
+        return
+    if message.chat.id == message.from_user.id:
+        await message.answer('📝Эта команда предназначена для использования в групповых чатах, а не в личных сообщениях!')
+        return
+    
+    connection = sqlite3.connect(main_path, check_same_thread=False)
+    cursor = connection.cursor()
+    
+    try:
+        cursor.execute(f"SELECT * FROM [{-(message.chat.id)}bans]")
+        all_bans = cursor.fetchall()
+    except sqlite3.OperationalError:
+        await message.reply('📝Таблица банов не найдена')
+        return
+    
+    if not all_bans:
+        await message.reply('📝Список забаненных пуст')
+        return
+    
+    bans_count = len(all_bans)
+    itog = []
+    ar = []
+    
+    for i, ban in enumerate(all_bans):
+        tg_id = ban[0]
+        pubg_id = ban[1]
+        prichina = ban[3]
+        date = ban[4]
+        user_men = ban[5]
+        moder_men = ban[6]
+        
+        textt = f'🔴 {i + 1}. {user_men}\n👮♂️ Забанил: {moder_men}\n💬 Причина: {prichina}\n⏰ Дата: {date}\n🎮 PUBG ID: <code>{pubg_id}</code>'
+        ar.append(textt)
+        
+        if (i + 1) % 5 == 0 or i == bans_count - 1:
+            itog.append('\n\n'.join(ar))
+            ar.clear()
+    
+    global page, page_c
+    page = 0
+    page_c = len(itog)
+    
+    buttons = [
+        types.InlineKeyboardButton(text="◀️", callback_data="ban_back"),
+        types.InlineKeyboardButton(text="▶️", callback_data="ban_next")
+    ]
+    keyboard = types.InlineKeyboardMarkup(row_width=2)
+    keyboard.add(*buttons)
+    
+    await message.reply(
+        f'🗓<b>Список забаненных пользователей (страниц: {page_c}):</b>\n\n{itog[page]}',
+        parse_mode='html',
+        reply_markup=keyboard
+    )
+
+
+#? EN: Handles the "back" button in the ban list pagination.
+#* RU: Обрабатывает кнопку «◀️» в пагинации списка банов.
+@dp.callback_query_handler(text="ban_back")
+async def ban_list_back(call: types.CallbackQuery):
+    global page, page_c, itog
+    
+    buttons = [
+        types.InlineKeyboardButton(text="◀️", callback_data="ban_back"),
+        types.InlineKeyboardButton(text="▶️", callback_data="ban_next")
+    ]
+    keyboard = types.InlineKeyboardMarkup(row_width=2)
+    keyboard.add(*buttons)
+    
+    try:
+        page -= 1
+        if page < 0:
+            page = 0
+            await bot.answer_callback_query(call.id, text='⚠️это первая страница')
+            return
+        await call.message.edit_text(
+            f'🗓<b>Список забаненных пользователей (страниц: {page_c}):</b>\n\n{itog[page]}',
+            parse_mode='html',
+            reply_markup=keyboard
+        )
+    except MessageNotModified:
+        return
+
+
+#? EN: Handles the "next" button in the ban list pagination.
+#* RU: Обрабатывает кнопку «▶️» в пагинации списка банов.
+@dp.callback_query_handler(text="ban_next")
+async def ban_list_next(call: types.CallbackQuery):
+    global page, page_c, itog
+    
+    buttons = [
+        types.InlineKeyboardButton(text="◀️", callback_data="ban_back"),
+        types.InlineKeyboardButton(text="▶️", callback_data="ban_next")
+    ]
+    keyboard = types.InlineKeyboardMarkup(row_width=2)
+    keyboard.add(*buttons)
+    
+    try:
+        page += 1
+        if page >= page_c:
+            page = page_c - 1
+            await bot.answer_callback_query(call.id, text='⚠️это последняя страница')
+            return
+        await call.message.edit_text(
+            f'🗓<b>Список забаненных пользователей (страниц: {page_c}):</b>\n\n{itog[page]}',
+            parse_mode='html',
+            reply_markup=keyboard
+        )
+    except MessageNotModified:
+        pass
 
 
 #? EN: Removes a specific warning from a user (by warn number 1–3) and updates the warn counter.
