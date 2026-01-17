@@ -449,42 +449,42 @@ async def pravila_sdk(message):
     return text
 
 
-#? EN: Extracts user ID from message (mention, reply, or direct ID)
-#* RU: Извлекает ID пользователя из сообщения (упоминание, ответ или прямой ID)
-#? EN: Extracts user ID from message (mention, reply, or direct ID)
-#* RU: Извлекает ID пользователя из сообщения (упоминание, ответ или прямой ID)
-async def get_user_id(message):
-    try:
-        user_id = int(message.text.split('tg://openmessage?user_id=')[1].split()[0])
-        return user_id
-    except IndexError:
-        pass
-    except TypeError:
-        pass
-    except ValueError:
-        pass
-    try:
-        user_id = int(message.text.split('@')[1].split()[0])
-        return user_id
-    except ValueError:
-        pass
-    except IndexError:
-        pass
-    try:
-        username = (message.text.split('@')[1]).split()[0]
-        user_id = int(cursor.execute(f"SELECT tg_id FROM [{-(message.chat.id)}] WHERE username=?", (username,)).fetchall()[0][0])
-        return user_id
-    except IndexError:
-        pass
+# #? EN: Extracts user ID from message (mention, reply, or direct ID)
+# #* RU: Извлекает ID пользователя из сообщения (упоминание, ответ или прямой ID)
+# #? EN: Extracts user ID from message (mention, reply, or direct ID)
+# #* RU: Извлекает ID пользователя из сообщения (упоминание, ответ или прямой ID)
+# async def get_user_id(message):
+#     try:
+#         user_id = int(message.text.split('tg://openmessage?user_id=')[1].split()[0])
+#         return user_id
+#     except IndexError:
+#         pass
+#     except TypeError:
+#         pass
+#     except ValueError:
+#         pass
+#     try:
+#         user_id = int(message.text.split('@')[1].split()[0])
+#         return user_id
+#     except ValueError:
+#         pass
+#     except IndexError:
+#         pass
+#     try:
+#         username = (message.text.split('@')[1]).split()[0]
+#         user_id = int(cursor.execute(f"SELECT tg_id FROM [{-(message.chat.id)}] WHERE username=?", (username,)).fetchall()[0][0])
+#         return user_id
+#     except IndexError:
+#         pass
 
-    if message.reply_to_message:
-        user_id = message.reply_to_message.from_user.id
-        return user_id
-    else:
-        return False
+#     if message.reply_to_message:
+#         user_id = message.reply_to_message.from_user.id
+#         return user_id
+#     else:
+#         return False
 
-#? EN: Extracts user ID from message, defaults to sender if not found
-#* RU: Извлекает ID пользователя из сообщения, по умолчанию возвращает отправителя
+# #? EN: Extracts user ID from message, defaults to sender if not found
+# #* RU: Извлекает ID пользователя из сообщения, по умолчанию возвращает отправителя
 async def get_user_id_self(message):
     try:
         user_id = int(message.text.split('tg://openmessage?user_id=')[1].split()[0])

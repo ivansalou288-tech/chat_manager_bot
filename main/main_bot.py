@@ -439,7 +439,7 @@ async def prich_ban(message):
         return
     connection = sqlite3.connect(main_path, check_same_thread=False)
     cursor = connection.cursor()
-    user_id = await get_user_id(message)
+    user_id = await GetUserByMessage(message)
 
  
     try:
