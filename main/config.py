@@ -507,11 +507,11 @@ async def get_user_id_self(message):
         pass
 
     try:
-        username = (message.text.split('@')[1]).split()[0]
-        user_id = int(cursor.execute(f"SELECT tg_id FROM [{-(message.chat.id)}] WHERE username=?", (username,)).fetchall()[0][0])
-        return user_id
+            username = (message.text.split('@')[1]).split()[0]
+            user_id = int(cursor.execute(f"SELECT user_id FROM all_users WHERE username=?", (username,)).fetchall()[0][0])
+            return user_id
     except IndexError:
-        pass
+            pass
 
     if message.reply_to_message:
         user_id = message.reply_to_message.from_user.id
