@@ -29,6 +29,71 @@ from modules.otn import *
 
 register_hot_cold_handlers(dp)
 
+#? EN: Shows a paginated list of all banned users in the chat with ban details.
+#* RU: Показывает постраничный список всех забаненных пользователей в чате с деталями бана.
+@dp.message_handler(Text(startswith=['банлист'], ignore_case=True), content_types=ContentType.TEXT, is_forwarded=False)
+async def ban_list(message: types.Message):
+    print('ban list ')
+    if len(message.text.split()[0]) != 7:
+        return
+    if message.chat.id not in chats:
+        await message.answer('кыш')
+        return
+    if message.chat.id == message.from_user.id:
+        await message.answer('📝Эта команда предназначена для использования в групповых чатах, а не в личных сообщениях!')
+        return
+    
+    connection = sqlite3.connect(main_path, check_same_thread=False)
+    cursor = connection.cursor()
+    print('ban list 5')
+    try:
+        cursor.execute(f"SELECT * FROM [{-(message.chat.id)}bans]")
+        all_bans = cursor.fetchall()
+    except sqlite3.OperationalError:
+        await message.reply('📝Таблица банов не найдена')
+        return
+    
+    if not all_bans:
+        await message.reply('📝Список забаненных пуст')
+        return
+    
+    bans_count = len(all_bans)
+    itog = []
+    ar = []
+    
+    for i, ban in enumerate(all_bans):
+        tg_id = ban[0]
+        pubg_id = ban[1]
+        prichina = ban[3]
+        date = ban[4]
+        user_men = ban[5]
+        moder_men = ban[6]
+        
+        textt = f'🔴 {i + 1}. {user_men}\n👮♂️ Забанил: {moder_men}\n💬 Причина: {prichina}\n⏰ Дата: {date}\n🎮 PUBG ID: <code>{pubg_id}</code>'
+        ar.append(textt)
+        
+        if (i + 1) % 5 == 0 or i == bans_count - 1:
+            itog.append('\n\n'.join(ar))
+            ar.clear()
+    
+    global page, page_c
+    page = 0
+    page_c = len(itog)
+    
+    buttons = [
+        types.InlineKeyboardButton(text="◀️", callback_data="ban_back"),
+        types.InlineKeyboardButton(text="▶️", callback_data="ban_next")
+    ]
+    keyboard = types.InlineKeyboardMarkup(row_width=2)
+    keyboard.add(*buttons)
+    
+    await message.reply(
+        f'🗓<b>Список забаненных пользователей (страниц: {page_c}):</b>\n\n{itog[page]}',
+        parse_mode='html',
+        reply_markup=keyboard
+    )
+
+
 
 #? EN: Handles the "successful_recom1" callback and saves a prepared recommendation from temp storage to the main table.
 #* RU: Обрабатывает колбэк «successful_recom1» и сохраняет подготовленную рекомендацию из временного хранилища в основную таблицу.
@@ -987,68 +1052,6 @@ async def warnUser(message: types.Message):
         await limit_warns(message)
 
 
-#? EN: Shows a paginated list of all banned users in the chat with ban details.
-#* RU: Показывает постраничный список всех забаненных пользователей в чате с деталями бана.
-@dp.message_handler(Text(startswith=['банлист'], ignore_case=True), content_types=ContentType.TEXT, is_forwarded=False)
-async def ban_list(message: types.Message):
-    if len(message.text.split()[0]) != 7:
-        return
-    if message.chat.id not in chats:
-        await message.answer('кыш')
-        return
-    if message.chat.id == message.from_user.id:
-        await message.answer('📝Эта команда предназначена для использования в групповых чатах, а не в личных сообщениях!')
-        return
-    
-    connection = sqlite3.connect(main_path, check_same_thread=False)
-    cursor = connection.cursor()
-    
-    try:
-        cursor.execute(f"SELECT * FROM [{-(message.chat.id)}bans]")
-        all_bans = cursor.fetchall()
-    except sqlite3.OperationalError:
-        await message.reply('📝Таблица банов не найдена')
-        return
-    
-    if not all_bans:
-        await message.reply('📝Список забаненных пуст')
-        return
-    
-    bans_count = len(all_bans)
-    itog = []
-    ar = []
-    
-    for i, ban in enumerate(all_bans):
-        tg_id = ban[0]
-        pubg_id = ban[1]
-        prichina = ban[3]
-        date = ban[4]
-        user_men = ban[5]
-        moder_men = ban[6]
-        
-        textt = f'🔴 {i + 1}. {user_men}\n👮♂️ Забанил: {moder_men}\n💬 Причина: {prichina}\n⏰ Дата: {date}\n🎮 PUBG ID: <code>{pubg_id}</code>'
-        ar.append(textt)
-        
-        if (i + 1) % 5 == 0 or i == bans_count - 1:
-            itog.append('\n\n'.join(ar))
-            ar.clear()
-    
-    global page, page_c
-    page = 0
-    page_c = len(itog)
-    
-    buttons = [
-        types.InlineKeyboardButton(text="◀️", callback_data="ban_back"),
-        types.InlineKeyboardButton(text="▶️", callback_data="ban_next")
-    ]
-    keyboard = types.InlineKeyboardMarkup(row_width=2)
-    keyboard.add(*buttons)
-    
-    await message.reply(
-        f'🗓<b>Список забаненных пользователей (страниц: {page_c}):</b>\n\n{itog[page]}',
-        parse_mode='html',
-        reply_markup=keyboard
-    )
 
 
 #? EN: Handles the "back" button in the ban list pagination.
