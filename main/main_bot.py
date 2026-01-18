@@ -3408,17 +3408,9 @@ async def shedul_posting(message):
                 await bot.send_message(chat_id=-1003101400599, text=saturday)
             if datetime.today().weekday() == 6:
                 await bot.send_message(chat_id=-1003101400599, text=sunday)
-            if datetime.today().weekday() == 0 and week_count == 1:
-                await bot.send_photo(chat_id=-1003212045301, photo=open('photos/first_week.jpg', 'rb'), caption=first_monday)
-                week_count += 1
-            elif datetime.today().weekday() == 0 and week_count == 2:
-                await bot.send_photo(chat_id=-1003101400599, photo=open('photos/second_week.jpg', 'rb'), caption=second_monday)
-                week_count += 1
-            elif datetime.today().weekday() == 0 and week_count == 3:
-                await bot.send_photo(chat_id=-1003101400599, photo=open('photos/third_week.jpg', 'rb'), caption=third_monday)
-                week_count += 1
-            if week_count == 4:
-                week_count = 1
+            if datetime.today().weekday() == 0:
+                await bot.send_message(chat_id=-1003101400599, text=monday)
+
 
 
 if __name__ == "__main__":
