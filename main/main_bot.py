@@ -24,7 +24,10 @@ from modules.who_is_who import *
 from modules.hot_cold import register_hot_cold_handlers
 from modules.bookmarks import *
 from modules.otn import *
-
+page_b = 0
+itog_b = []
+itog = 0
+page_c_b = 0
   # Import to register all handlers
 
 register_hot_cold_handlers(dp)
@@ -33,6 +36,7 @@ register_hot_cold_handlers(dp)
 #* RU: Показывает постраничный список всех забаненных пользователей в чате с деталями бана.
 @dp.message_handler(Text(startswith=['банлист'], ignore_case=True), content_types=ContentType.TEXT, is_forwarded=False)
 async def ban_list(message: types.Message):
+    global page_b, page_c_b, itog_b
     print('ban list ')
     if len(message.text.split()[0]) != 7:
         return
@@ -58,7 +62,7 @@ async def ban_list(message: types.Message):
         return
     
     bans_count = len(all_bans)
-    itog = []
+
     ar = []
     
     for i, ban in enumerate(all_bans):
@@ -71,14 +75,15 @@ async def ban_list(message: types.Message):
         
         textt = f'🔴 {i + 1}. {user_men}\n👮♂️ Забанил: {moder_men}\n💬 Причина: {prichina}\n⏰ Дата: {date}\n🎮 PUBG ID: <code>{pubg_id}</code>'
         ar.append(textt)
-        
-        if (i + 1) % 5 == 0 or i == bans_count - 1:
-            itog.append('\n\n'.join(ar))
-            ar.clear()
+        print(ar)
+        if (i+1) % 5 == 0 or i == bans_count - 1:
+            itog_b.append(ar)
+            ar = []
+            
     
-    global page, page_c
-    page = 0
-    page_c = len(itog)
+
+    page_b = 0
+    page_c_b = len(itog_b)
     
     buttons = [
         types.InlineKeyboardButton(text="◀️", callback_data="ban_back"),
@@ -86,9 +91,10 @@ async def ban_list(message: types.Message):
     ]
     keyboard = types.InlineKeyboardMarkup(row_width=2)
     keyboard.add(*buttons)
-    
+    print(itog_b, page_b, page_c_b)
+    txt = "\n\n".join(itog_b[page_b])
     await message.reply(
-        f'🗓<b>Список забаненных пользователей (страниц: {page_c}):</b>\n\n{itog[page]}',
+        f'🗓<b>Список забаненных пользователей (страниц: {page_c_b}):</b>\n\n{txt}',
         parse_mode='html',
         reply_markup=keyboard
     )
@@ -1054,11 +1060,12 @@ async def warnUser(message: types.Message):
 
 
 
+
 #? EN: Handles the "back" button in the ban list pagination.
 #* RU: Обрабатывает кнопку «◀️» в пагинации списка банов.
 @dp.callback_query_handler(text="ban_back")
 async def ban_list_back(call: types.CallbackQuery):
-    global page, page_c, itog
+    global page_b, page_c_b, itog_b
     
     buttons = [
         types.InlineKeyboardButton(text="◀️", callback_data="ban_back"),
@@ -1068,13 +1075,14 @@ async def ban_list_back(call: types.CallbackQuery):
     keyboard.add(*buttons)
     
     try:
-        page -= 1
-        if page < 0:
-            page = 0
+        page_b -= 1
+        if page_b < 0:
+            page_b = 0
             await bot.answer_callback_query(call.id, text='⚠️это первая страница')
             return
+        txt = "\n\n".join(itog_b[page_b])
         await call.message.edit_text(
-            f'🗓<b>Список забаненных пользователей (страниц: {page_c}):</b>\n\n{itog[page]}',
+            f'🗓<b>Список забаненных пользователей (страниц: {page_c_b}):</b>\n\n{txt}',
             parse_mode='html',
             reply_markup=keyboard
         )
@@ -1086,7 +1094,7 @@ async def ban_list_back(call: types.CallbackQuery):
 #* RU: Обрабатывает кнопку «▶️» в пагинации списка банов.
 @dp.callback_query_handler(text="ban_next")
 async def ban_list_next(call: types.CallbackQuery):
-    global page, page_c, itog
+    global page_b, page_c_b, itog_b
     
     buttons = [
         types.InlineKeyboardButton(text="◀️", callback_data="ban_back"),
@@ -1096,13 +1104,15 @@ async def ban_list_next(call: types.CallbackQuery):
     keyboard.add(*buttons)
     
     try:
-        page += 1
-        if page >= page_c:
-            page = page_c - 1
+        page_b += 1
+        if page_b >= page_c_b:
+            page_b = page_c_b - 1
             await bot.answer_callback_query(call.id, text='⚠️это последняя страница')
             return
+        print(itog_b)
+        txt = "\n\n".join(itog_b[page_b])   
         await call.message.edit_text(
-            f'🗓<b>Список забаненных пользователей (страниц: {page_c}):</b>\n\n{itog[page]}',
+            f'🗓<b>Список забаненных пользователей (страниц: {page_c_b}):</b>\n\n{txt}',
             parse_mode='html',
             reply_markup=keyboard
         )

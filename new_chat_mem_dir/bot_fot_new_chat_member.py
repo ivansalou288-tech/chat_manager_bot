@@ -1,4 +1,5 @@
 import random
+import time
 import types
 from datetime import datetime
 from unittest.mock import call
@@ -426,10 +427,19 @@ def get_text_messages(message):
         except telebot.apihelper.ApiTelegramException:
             pass
 
+def main():
+    try:
+        bot.polling(none_stop=True, interval=0)
+    except Exception as e:
+        print(e)
+        time.sleep(1)
+        main()
 
 
 if __name__ == "__main__":
-    bot.polling(none_stop=True, interval=0)
+    main()
+
+
 
 
 
