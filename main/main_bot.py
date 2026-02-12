@@ -719,7 +719,7 @@ async def bot_check(message):
     except IndexError:
         if len(message.text) > 3:
             return
-        await message.reply("✅Бот на месте")
+        await message.reply(f"{gal} Бот на месте", parse_mode='html')
 
 
 #? EN: Assigns a random "article" (fun punishment) to the user once per day and remembers it in the database.

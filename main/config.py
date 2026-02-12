@@ -95,6 +95,13 @@ sunday="Доброе утро пидоры! \nПидор 1 наблюдает, �
 week_count = 1
 posting = False
 
+gal = '<tg-emoji emoji-id="5462919317832082236"></tg-emoji>'
+dance_cat = '<tg-emoji emoji-id="5235465481992809720"></tg-emoji>'
+block = '<tg-emoji emoji-id="5240241223632954241"></tg-emoji>'
+voscl = '<tg-emoji emoji-id="5440660757194744323"></tg-emoji>'
+soziv = '<tg-emoji emoji-id="5424818078833715060"></tg-emoji>'
+dance_ezh = '<tg-emoji emoji-id="6262672546521423618"></tg-emoji>'
+
 #? EN: Who can recommend and remove recommendations
 #* RU: Кто может рекомендовать и снимать рекомендации
 can_recommend_users = [8015726709, 1401086794, 1240656726, 5714854312, 1803851598, 5740021109]
