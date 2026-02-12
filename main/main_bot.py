@@ -1952,7 +1952,7 @@ async def plus_nik(message):
     if comments == '' or comments == " ":
         await message.reply('Ник не должен быть пустым')
         return
-    if len(comments) > 20:
+    if len(comments) > 50:
         await message.reply('Ник не должен быть длиннее 50 символов')
         return
     await message.reply(f'✅ Ник {message.from_user.get_mention(as_html=True)} изменён на «{comments}»',
@@ -3344,7 +3344,7 @@ async def set_period(message):
         await message.reply(f'📝Произошла ошибка: {str(e)}')
 
 
-@dp.message_handler()
+#@dp.message_handler()
 async def get_username(message: types.Message):
     global is_auto_unmute
     global is_quests
