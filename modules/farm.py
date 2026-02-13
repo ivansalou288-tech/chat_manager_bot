@@ -16,7 +16,7 @@ async def farm(message):
         black_list.append(i[0])
 
     if message.from_user.id in black_list:
-        await message.answer(text='❌<b>НЕЗАЧЕТ!</b> Работать на ферме можно только с процентами ежу, а ты не скидывался на покушать н1 разрабу)', parse_mode = 'html')
+        await message.answer(text=f'{krest}<b>НЕЗАЧЕТ!</b> Работать на ферме можно только с процентами ежу, а ты не скидывался на покушать н1 разрабу)', parse_mode = 'html')
         return
     user_id = message.from_user.id
     delta_bust = random.randint(3, 150)
@@ -36,7 +36,7 @@ async def farm(message):
             meshok_new = meshok_old + delta_bust
             cursor.execute('UPDATE farma SET meshok = ? WHERE user_id = ?', (meshok_new, user_id))
             cursor.execute('UPDATE farma SET last_date = ? WHERE user_id = ?', (datetime.now().strftime("%H:%M:%S %d.%m.%Y"), user_id))
-            await message.answer(f'✅ <b>ЗАЧЁТ!</b> 🍊 +{delta_bust} eZ¢', parse_mode=ParseMode.HTML)
+            await message.answer(f'{gal} <b>ЗАЧЁТ!</b> {money} +{delta_bust} eZ¢', parse_mode=ParseMode.HTML)
             connection.commit()
         else:
             delta = timedelta(hours=4) - delta
@@ -61,12 +61,12 @@ async def farm(message):
                 minutes_text = f'{minutes} мин '
 
             lst_date = f'{days_text}{hours_text}{minutes_text}'
-            await message.answer(f'❌<b>НЕЗАЧЕТ!</b> Фармить можно раз в 4 часа.\nСледующая добыча через {lst_date}', parse_mode=ParseMode.HTML)
+            await message.answer(f'{krest}<b>НЕЗАЧЕТ!</b> Фармить можно раз в 4 часа.\nСледующая добыча через {lst_date}', parse_mode=ParseMode.HTML)
     except IndexError:
         meshok_new = meshok_old + delta_bust
         cursor.execute('INSERT INTO farma (user_id, meshok, last_date) VALUES (?, ?, ?)', (user_id, meshok_new, datetime.now().strftime("%H:%M:%S %d.%m.%Y")))
 
-        await message.answer(f'✅ <b>ЗАЧЁТ!</b> 🍊 +{delta_bust} eZ¢', parse_mode=ParseMode.HTML)
+        await message.answer(f'{gal} <b>ЗАЧЁТ!</b> {money} +{delta_bust} eZ¢', parse_mode=ParseMode.HTML)
         connection.commit()
 
 
@@ -106,7 +106,7 @@ async def mesh(message):
         meshok_old = cursor.execute(f"SELECT meshok FROM farma WHERE user_id = ?", (user_id,)).fetchall()[0][0]
     except IndexError:
         meshok_old = 0
-    await message.answer(f'💰 В мешке <a href="https://t.me/{username}">{name_user}</a>: 🍊 {meshok_old}  eZ¢', parse_mode=ParseMode.HTML, disable_web_page_preview=True)
+    await message.answer(f'{mesh_money} В мешке <a href="https://t.me/{username}">{name_user}</a>: {money} {meshok_old}  eZ¢', parse_mode=ParseMode.HTML, disable_web_page_preview=True)
 
 
 #? EN: Starts the transfer UI to send eZ¢ from your bag to another user with adjustable amount.
@@ -123,7 +123,7 @@ async def mesh(message):
     #     await message.answer('Я знаю тебя заставляют, по этому тебе не доступна эта функция')
     #     return
 
-    user_id = await get_user_id(message)
+    user_id = GetUserByMessage(message).user_id
     if user_id == False:
         await message.reply(
             '📝Невозможно найти информацию о пользователе\n\n💬Введите корректный юзернейм(<code>@</code><i>юзер</i>), тг айди (<code>@</code><i>айди</i>) или ответь на сообщение',
@@ -152,7 +152,7 @@ async def mesh(message):
     d = InlineKeyboardButton(text="Все", callback_data="all_p")
     keyboard = InlineKeyboardMarkup()
     keyboard.add(a, b).add(f, g).add(t, y).row(d).row(c)
-    message_id = (await bot.send_message(message.chat.id, text=f'💰 В твоем мешке: 🍊 {meshok_self}  eZ¢\nТвой перевод: {perev}',parse_mode='html', reply_markup=keyboard)).message_id
+    message_id = (await bot.send_message(message.chat.id, text=f'{mesh_money} В твоем мешке: {money} {meshok_self}  eZ¢\nТвой перевод: {perev}',parse_mode='html', reply_markup=keyboard)).message_id
     try:
         cursor.execute('INSERT INTO perevod (self_id, user_id, mess_id, stavka) VALUES (?, ?, ?, ?)', (self_id,user_id, message_id, 100))
         connection.commit()
@@ -200,7 +200,7 @@ async def plus(call: types.CallbackQuery):
     keyboard = InlineKeyboardMarkup()
     keyboard.add(a, b).add(f, g).add(t, y).row(d).row(c)
 
-    await call.message.edit_text(text=f'💰 В твоем мешке: 🍊 {meshok}  eZ¢\nТвой перевод: {stavka+1000}',parse_mode='html', reply_markup=keyboard)
+    await call.message.edit_text(text=f'{mesh_money} В твоем мешке: {money} {meshok}  eZ¢\nТвой перевод: {stavka+1000}',parse_mode='html', reply_markup=keyboard)
     await bot.answer_callback_query(call.id, text='')
 
 #? EN: Decreases the planned transfer amount by 1000 eZ¢ but not below 100.
@@ -234,7 +234,7 @@ async def minus(call: types.CallbackQuery):
     d = InlineKeyboardButton(text="Все", callback_data="all_p")
     keyboard = InlineKeyboardMarkup()
     keyboard.add(a, b).add(f, g).add(t, y).row(d).row(c)
-    await call.message.edit_text(text=f'💰 В твоем мешке: 🍊 {meshok}  eZ¢\nТвой перевод: {stavka-1000}',parse_mode='html', reply_markup=keyboard)
+    await call.message.edit_text(text=f'{mesh_money} В твоем мешке: {money} {meshok}  eZ¢\nТвой перевод: {stavka-1000}',parse_mode='html', reply_markup=keyboard)
     await bot.answer_callback_query(call.id, text='')
 
 #? EN: Increases the planned transfer amount by 50 000 eZ¢ (large step).
@@ -270,7 +270,7 @@ async def plus(call: types.CallbackQuery):
     keyboard = InlineKeyboardMarkup()
     keyboard.add(a, b).add(f, g).add(t, y).row(d).row(c)
 
-    await call.message.edit_text(text=f'💰 В твоем мешке: 🍊 {meshok}  eZ¢\nТвой перевод: {stavka+50000}',parse_mode='html', reply_markup=keyboard)
+    await call.message.edit_text(text=f'{mesh_money} В твоем мешке: {money} {meshok}  eZ¢\nТвой перевод: {stavka+50000}',parse_mode='html', reply_markup=keyboard)
     await bot.answer_callback_query(call.id, text='')
 
 #? EN: Decreases the planned transfer amount by 50 000 eZ¢ but not below 100.
@@ -305,7 +305,7 @@ async def minus(call: types.CallbackQuery):
     keyboard = InlineKeyboardMarkup()
     keyboard.add(a, b).add(f, g).add(t, y).row(d).row(c)
 
-    await call.message.edit_text(text=f'💰 В твоем мешке: 🍊 {meshok}  eZ¢\nТвой перевод: {stavka-50000}',parse_mode='html', reply_markup=keyboard)
+    await call.message.edit_text(text=f'{mesh_money} В твоем мешке: {money} {meshok}  eZ¢\nТвой перевод: {stavka-50000}',parse_mode='html', reply_markup=keyboard)
     await bot.answer_callback_query(call.id, text='')
 
 #? EN: Increases the planned transfer amount by 100 eZ¢ (small step).
@@ -341,7 +341,7 @@ async def plus(call: types.CallbackQuery):
     keyboard = InlineKeyboardMarkup()
     keyboard.add(a, b).add(f, g).add(t, y).row(d).row(c)
 
-    await call.message.edit_text(text=f'💰 В твоем мешке: 🍊 {meshok}  eZ¢\nТвой перевод: {stavka+100}',parse_mode='html', reply_markup=keyboard)
+    await call.message.edit_text(text=f'{mesh_money} В твоем мешке: {money} {meshok}  eZ¢\nТвой перевод: {stavka+100}',parse_mode='html', reply_markup=keyboard)
     await bot.answer_callback_query(call.id, text='')
 
 #? EN: Decreases the planned transfer amount by 100 eZ¢ but not below 100.
@@ -376,7 +376,7 @@ async def minus(call: types.CallbackQuery):
     keyboard = InlineKeyboardMarkup()
     keyboard.add(a, b).add(f, g).add(t, y).row(d).row(c)
 
-    await call.message.edit_text(text=f'💰 В твоем мешке: 🍊 {meshok}  eZ¢\nТвой перевод: {stavka-100}',parse_mode='html', reply_markup=keyboard)
+    await call.message.edit_text(text=f'{mesh_money} В твоем мешке: {money} {meshok}  eZ¢\nТвой перевод: {stavka-100}',parse_mode='html', reply_markup=keyboard)
     await bot.answer_callback_query(call.id, text='')
 
 #? EN: Sets the planned transfer amount to the full current balance of the sender’s bag.
@@ -410,7 +410,7 @@ async def plus(call: types.CallbackQuery):
     keyboard = InlineKeyboardMarkup()
     keyboard.add(a, b).add(f, g).add(t, y).row(d).row(c)
 
-    await call.message.edit_text(text=f'💰 В твоем мешке: 🍊 {meshok}  eZ¢\nТвой перевод: {meshok}',parse_mode='html', reply_markup=keyboard)
+    await call.message.edit_text(text=f'{mesh_money} В твоем мешке: {money} {meshok}  eZ¢\nТвой перевод: {meshok}',parse_mode='html', reply_markup=keyboard)
     await bot.answer_callback_query(call.id, text='')
 
 

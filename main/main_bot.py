@@ -44,7 +44,7 @@ async def ban_list(message: types.Message):
         await message.answer('кыш')
         return
     if message.chat.id == message.from_user.id:
-        await message.answer('📝Эта команда предназначена для использования в групповых чатах, а не в личных сообщениях!')
+        await message.answer(f'{write_em}Эта команда предназначена для использования в групповых чатах, а не в личных сообщениях!')
         return
     
     connection = sqlite3.connect(main_path, check_same_thread=False)
@@ -54,11 +54,11 @@ async def ban_list(message: types.Message):
         cursor.execute(f"SELECT * FROM [{-(message.chat.id)}bans]")
         all_bans = cursor.fetchall()
     except sqlite3.OperationalError:
-        await message.reply('📝Таблица банов не найдена')
+        await message.reply(f'{write_em}Таблица банов не найдена')
         return
     
     if not all_bans:
-        await message.reply('📝Список забаненных пуст')
+        await message.reply(f'{write_em}Список забаненных пуст')
         return
     
     bans_count = len(all_bans)
@@ -73,7 +73,7 @@ async def ban_list(message: types.Message):
         user_men = ban[5]
         moder_men = ban[6]
         
-        textt = f'🔴 {i + 1}. {user_men}\n👮♂️ Забанил: {moder_men}\n💬 Причина: {prichina}\n⏰ Дата: {date}\n🎮 PUBG ID: <code>{pubg_id}</code>'
+        textt = f'{circle_em} {i + 1}. {user_men}\n👮♂️ Забанил: {moder_men}\n{mes_em} Причина: {prichina}\n⏰ Дата: {date}\n🎮 PUBG ID: <code>{pubg_id}</code>'
         ar.append(textt)
         print(ar)
         if (i+1) % 5 == 0 or i == bans_count - 1:
@@ -94,7 +94,7 @@ async def ban_list(message: types.Message):
     print(itog_b, page_b, page_c_b)
     txt = "\n\n".join(itog_b[page_b])
     await message.reply(
-        f'🗓<b>Список забаненных пользователей (страниц: {page_c_b}):</b>\n\n{txt}',
+        f'{desk_em}<b>Список забаненных пользователей (страниц: {page_c_b}):</b>\n\n{txt}',
         parse_mode='html',
         reply_markup=keyboard
     )
@@ -106,7 +106,7 @@ async def ban_list(message: types.Message):
 @dp.callback_query_handler(text="successful_recom1")
 async def successful_recom1(call: types.CallbackQuery):
     if call.from_user.id not in can_recommend_users:
-        await bot.answer_callback_query(call.id, text='⚠️Тебе не доступна эта функция')
+        await bot.answer_callback_query(call.id, text=f'{znak_yelow} Тебе не доступна эта функция')
         return
     connection = sqlite3.connect(main_path, check_same_thread=False)
     cursor = connection.cursor()
@@ -123,7 +123,7 @@ async def successful_recom1(call: types.CallbackQuery):
     cursor.execute(
         'INSERT INTO recommendation (user_id, pubg_id, moder, comments, rang, date, recom_id) VALUES (?, ?, ?, ?, ?, ?, ?)',
         (user_id, pubg_id, moder, comments, recom, date, id_recom))
-    await call.message.edit_text('✅Рекомендация заполнена')
+    await call.message.edit_text('  Рекомендация заполнена')
     connection.commit()
     cursor.execute('DELETE FROM din_admn_user_data WHERE moder = ?', (moder,))
     connection.commit()
@@ -134,9 +134,9 @@ async def successful_recom1(call: types.CallbackQuery):
 @dp.callback_query_handler(text="not_successful_user1")
 async def successful_recom1(call: types.CallbackQuery):
     if call.from_user.id not in can_recommend_users:
-        await bot.answer_callback_query(call.id, text='⚠️Тебе не доступна эта функция')
+        await bot.answer_callback_query(call.id, text=f'{znak_yelow} Тебе не доступна эта функция')
         return
-    await call.message.edit_text('❌Отменено')
+    await call.message.edit_text(f'{krest} Отменено')
 
 #? EN: Handles /start and /help commands in private chat, shows basic info, clan status and main navigation buttons.
 #* RU: Обрабатывает команды /start и /help в личных сообщениях, показывает основную информацию, статус в клане и основные кнопки навигации.
@@ -149,12 +149,12 @@ async def start(message):
 
     about = await about_user_sdk(message.from_user.id, klan)
     if about == '' or about == None:
-        is_in_klan = '❌ Ты не участник клана'
+        is_in_klan = f'{krest}  Ты не участник клана'
     else:
-        is_in_klan = f'✅ Ты участник клана\n\n<b>Твое описание</b>\n{about}'
+        is_in_klan = f'Ты участник клана\n\n<b>Твое описание</b>\n{about}'
     buttons = [
         types.InlineKeyboardButton(text="☎️  Менеджер", url='https://t.me/werty_pub'),
-        types.InlineKeyboardButton(text="📝  Регистрация", url="https://t.me/werty_clan_helper_bot"),
+        types.InlineKeyboardButton(text="{write_em}  Регистрация", url="https://t.me/werty_clan_helper_bot"),
         types.InlineKeyboardButton(text="Канал WERTY", url="https://t.me/Werty_Metro"),
         types.InlineKeyboardButton(text="👨‍💻Нашел баг!(админ бота)", url="https://t.me/zzoobank")
 
@@ -171,7 +171,7 @@ async def start(message):
 @dp.callback_query_handler(text="commands")
 async def successful_recom1(call: types.CallbackQuery):
     text = cursor.execute('SELECT text FROM texts WHERE text_name = ?', ('commands',)).fetchall()[0][0]
-    await bot.send_message(call.from_user.id, f'🗓<b>Список команд чата:</b>\n\n{text}', parse_mode=ParseMode.HTML, disable_web_page_preview=True)
+    await bot.send_message(call.from_user.id, f'{desk_em}<b>Список команд чата:</b>\n\n{text}', parse_mode=ParseMode.HTML, disable_web_page_preview=True)
     await bot.answer_callback_query(call.id, text='')
 
 #? EN: Shows the list of currently muted users in the chat when user sends the "муты" command.
@@ -188,7 +188,7 @@ async def mutes_check(message):
 
     if message.chat.id == message.from_user.id:
         await message.answer(
-            '📝Эта команда предназначена для использования в групповых чатах, а не в личных сообщениях!')
+            f'{write_em}Эта команда предназначена для использования в групповых чатах, а не в личных сообщениях!')
         return
     connection = sqlite3.connect(main_path, check_same_thread=False)
     cursor = connection.cursor()
@@ -222,11 +222,11 @@ async def mutes_check(message):
         except IndexError:
             name_user = 'Пользователь'
         print(name_user)
-        textt = f'<b>{i + 1}</b>. <a href="tg://user?id={users_ids[i]}">{name_user}</a> [{rang_mut[i]}]\n⏱️ До {dates[i]}\n👮‍Заглушил: {moders_mens[i]}\n💬Причина: {comments[i]}'
+        textt = f'<b>{i + 1}</b>. <a href="tg://user?id={users_ids[i]}">{name_user}</a> [{rang_mut[i]}]\n⏱️ До {dates[i]}\n👮‍Заглушил: {moders_mens[i]}\n{mes_em}Причина: {comments[i]}'
         itog.append(textt)
     itog_text = '\n\n'.join(itog)
     if itog_text == '':
-        itog_text = '💬 Список пока пуст'
+        itog_text = '{mes_em} Список пока пуст'
     await message.answer(f'⚪️ <b>Список пользователей, которым запрещено писать:</b>\n\n{itog_text}',
                          parse_mode=ParseMode.HTML)
 
@@ -241,7 +241,7 @@ async def mute(message):
         return
     
     if message.chat.id == message.from_user.id:
-        await message.answer('📝Эта команда предназначена для использования в групповых чатах, а не в личных сообщениях!')
+        await message.answer(f'{write_em}Эта команда предназначена для использования в групповых чатах, а не в личных сообщениях!')
         return
     
     # Парсинг аргументов команды
@@ -262,10 +262,10 @@ async def mute(message):
     
     # Валидация времени мута
     if muteint > 100:
-        await message.reply('Слишком большое число! \n Делай меньше!')
+        await message.reply('Слишком большое число! \n Делай меньше!', parse_mode='html')
         return
     if muteint <= 0:
-        await message.reply('Неверное значение времени мута')
+        await message.reply('Неверное значение времени мута', parse_mode='html')
         return
     
     # Извлечение комментария
@@ -277,11 +277,11 @@ async def mute(message):
     
     moder_status = await is_successful_moder(moder_id, message.chat.id, 'mut')
     if moder_status == False:
-        await message.reply('📝Ранг модератора не достаточен для использования этой команды')
+        await message.reply(f'{write_em}Ранг модератора не достаточен для использования этой команды')
         return
     elif moder_status == 'Need reg':
         await message.reply(
-            '📝Для использования бота нужно зарегистрироваться\n\n💬<i>Для регистрации напиши @zzoobank, он все объяснит</i>',
+            f'{write_em}Для использования бота нужно зарегистрироваться\n\n{mes_em}<i>Для регистрации напиши @zzoobank, он все объяснит</i>',
             parse_mode='html')
         return
     
@@ -289,7 +289,7 @@ async def mute(message):
     user_id = GetUserByMessage(message).user_id
     if not user_id:
         await message.reply(
-            '📝Невозможно найти информацию о пользователе\n\n💬Введите корректный юзернейм(<code>@</code><i>юзер</i>), тг айди (<code>@</code><i>айди</i>) или ответь на сообщение',
+            f'{write_em}Невозможно найти информацию о пользователе\n\n{mes_em}Введите корректный юзернейм(<code>@</code><i>юзер</i>), тг айди (<code>@</code><i>айди</i>) или ответь на сообщение',
             parse_mode='html')
         return
     
@@ -304,13 +304,13 @@ async def mute(message):
     
     if result == True:
         await message.reply(
-            f'🔇<b>Нарушитель:</b> <a href="tg://user?id={user_id}">{name_user}</a> лишается права слова\n'
-            f'⏰<b>Срок наказания:</b> {muteint} {mutetype}\n'
-            f'👿<b>Наказал его:</b> {moder_link}\n'
-            f'💬<b>Нарушение: {comments}</b>',
+            f'{mut_em} <b>Нарушитель:</b> <a href="tg://user?id={user_id}">{name_user}</a> лишается права слова\n'
+            f'{time_em}<b>Срок наказания:</b> {muteint} {mutetype}\n'
+            f'{zloy_cat}<b>Наказал его:</b> {moder_link}\n'
+            f'{mes_em}<b>Нарушение: {comments}</b>',
             parse_mode='html')
     elif result != False:
-        await message.reply(result)
+        await message.reply(result, parse_mode='html')
     
     if not is_auto_unmute:
         await auto_unmute(message)
@@ -340,7 +340,7 @@ async def unmute(message):
             return
     if message.chat.id == message.from_user.id:
         await message.answer(
-            '📝Эта команда предназначена для использования в групповых чатах, а не в личных сообщениях!')
+            f'{write_em}Эта команда предназначена для использования в групповых чатах, а не в личных сообщениях!')
         return
     
     # Проверка прав модератора
@@ -348,12 +348,12 @@ async def unmute(message):
     moder_permission = await is_successful_moder(moder_id, message.chat.id, 'mut')
     
     if moder_permission == False:
-        await message.reply('📝Ранг модератора не достаточен для использования этой команды')
+        await message.reply(f'{write_em}Ранг модератора не достаточен для использования этой команды')
         return
     
     if moder_permission == 'Need reg':
         await message.reply(
-            '📝Для использования бота нужно зарегистрироваться\n\n💬<i>Для регистрации напиши @zzoobank, он все объяснит</i>',
+            f'{write_em} Для использования бота нужно зарегистрироваться\n\n{mes_em}<i>Для регистрации напиши @zzoobank, он все объяснит</i>',
             parse_mode='html')
         return
     
@@ -361,7 +361,7 @@ async def unmute(message):
     user_info = GetUserByMessage(message)
     if not user_info or not user_info.user_id:
         await message.reply(
-            '📝Невозможно найти информацию о пользователе\n\n💬Введите корректный юзернейм(<code>@</code><i>юзер</i>), тг айди (<code>@</code><i>айди</i>) или ответь на сообщение',
+            f'{write_em} Невозможно найти информацию о пользователе\n\n{mes_em} Введите корректный юзернейм(<code>@</code><i>юзер</i>), тг айди (<code>@</code><i>айди</i>) или ответь на сообщение',
             parse_mode='html')
         return
     
@@ -387,10 +387,10 @@ async def unmute(message):
         
         if result == True:
             await message.reply(
-                f'🔊<a href="tg://user?id={user_id}">{name_user}</a> можешь говорить, но будь аккуратнее впредь\n\n❗️Правила чата можно посмотреть по команде «<code>правила</code>»',
+                f'{unmut_em}<a href="tg://user?id={user_id}">{name_user}</a> можешь говорить, но будь аккуратнее впредь\n\n{voscl}Правила чата можно посмотреть по команде «<code>правила</code>»',
                 parse_mode='html')
         else:
-            await message.reply(result)
+            await message.reply(result, parse_mode='html')
         
         connection.commit()
     finally:
@@ -431,7 +431,7 @@ async def ban(message):
                 return
     if message.chat.id == message.from_user.id:
         await message.answer(
-            '📝Эта команда предназначена для использования в групповых чатах, а не в личных сообщениях!')
+            f'{write_em}Эта команда предназначена для использования в групповых чатах, а не в личных сообщениях!')
         return
     
     # Проверка прав модератора
@@ -440,12 +440,12 @@ async def ban(message):
     moder_permission = await is_successful_moder(moder_id, message.chat.id, 'ban')
     
     if moder_permission == False:
-        await message.reply('📝Ранг модератора не достаточен для использования этой команды')
+        await message.reply(f'{write_em}Ранг модератора не достаточен для использования этой команды')
         return
     
     if moder_permission == 'Need reg':
         await message.reply(
-            '📝Для использования бота нужно зарегистрироваться\n\n💬<i>Для регистрации напиши @zzoobank, он все объяснит</i>',
+            f'{write_em}Для использования бота нужно зарегистрироваться\n\n{mes_em}<i>Для регистрации напиши @zzoobank, он все объяснит</i>',
             parse_mode='html')
         return
     
@@ -457,7 +457,7 @@ async def ban(message):
     user_info = GetUserByMessage(message)
     if not user_info or not user_info.user_id:
         await message.reply(
-            '📝Невозможно найти информацию о пользователе\n\n💬Введите корректный юзернейм(<code>@</code><i>юзер</i>), тг айди (<code>@</code><i>айди</i>) или ответь на сообщение',
+            f'{write_em}Невозможно найти информацию о пользователе\n\n{mes_em}Введите корректный юзернейм(<code>@</code><i>юзер</i>), тг айди (<code>@</code><i>айди</i>) или ответь на сообщение',
             parse_mode='html')
         return
     
@@ -488,7 +488,7 @@ async def ban(message):
         
         if result == True:
             await message.reply(
-                f'<b>❗️Внимание❗️</b>\n🔴Злостный нарушитель <a href="tg://user?id={user_id}">{name_user}</a> получает бан и покидает нас\n👮‍♂️Выгнал его: {moder_link}\n💬Выгнали его за: {comments}',
+                f'<b>{voscl}Внимание{voscl}</b>\n{circle_em}Злостный нарушитель <a href="tg://user?id={user_id}">{name_user}</a> получает бан и покидает нас\n👮‍♂️Выгнал его: {moder_link}\n{mes_em}Выгнали его за: {comments}',
                 parse_mode='html')
     finally:
         if connection:
@@ -506,7 +506,7 @@ async def prich_ban(message):
         return
     if message.chat.id == message.from_user.id:
         await message.answer(
-            '📝Эта команда предназначена для использования в групповых чатах, а не в личных сообщениях!')
+            f'{write_em}Эта команда предназначена для использования в групповых чатах, а не в личных сообщениях!')
         return
     connection = sqlite3.connect(main_path, check_same_thread=False)
     cursor = connection.cursor()
@@ -516,7 +516,7 @@ async def prich_ban(message):
     try:
         all = cursor.execute(f"SELECT * FROM [{-(message.chat.id)}bans] WHERE tg_id=?", (user_id,)).fetchall()[0]
     except:
-        await message.reply('📝Пользователь не забанен')
+        await message.reply(f'{write_em}Пользователь не забанен')
         return
     pubg_id = all[1]
     message_id = all[2]
@@ -527,7 +527,7 @@ async def prich_ban(message):
     chat_idd = int(str(message.chat.id).split('100')[1])
     message_link = f'https://t.me/c/{chat_idd}/{message_id}'
     await message.reply(
-        f'🚨Нарушитель {user_men} был забанен навсегда\n💬Причина: {comments}\n👮‍♂️Забанил: {moder_men}\n⏰Когда: {date}\n📝Айди в пабге: {pubg_id}\n📨<a href="{message_link}">Прейти к сообщению</a>',
+        f'🚨Нарушитель {user_men} был забанен навсегда\n{mes_em}Причина: {comments}\n👮‍♂️Забанил: {moder_men}\n⏰Когда: {date}\n{write_em}Айди в пабге: {pubg_id}\n📨<a href="{message_link}">Прейти к сообщению</a>',
         parse_mode='html')
 
 
@@ -550,23 +550,23 @@ async def unban(message):
         pass
     if message.chat.id == message.from_user.id:
         await message.answer(
-            '📝Эта команда предназначена для использования в групповых чатах, а не в личных сообщениях!')
+            f'{write_em}Эта команда предназначена для использования в групповых чатах, а не в личных сообщениях!')
         return
     connection = sqlite3.connect(main_path, check_same_thread=False)
     cursor = connection.cursor()
     moder_id = message.from_user.id
     moder_link = message.from_user.get_mention(as_html=True)
     if await is_successful_moder(moder_id, message.chat.id, 'ban') == False:
-        await message.reply('📝Ранг модератора не достаточен для использования этой команды')
+        await message.reply(f'{write_em}Ранг модератора не достаточен для использования этой команды')
         return
     elif await is_successful_moder(moder_id, message.chat.id, 'ban') == 'Need reg':
         await message.reply(
-            '📝Для использования бота нужно зарегистрироваться\n\n💬<i>Для регистрации напиши @zzoobank, он все объяснит</i>',
+            f'{write_em}Для использования бота нужно зарегистрироваться\n\n{mes_em}<i>Для регистрации напиши @zzoobank, он все объяснит</i>',
             parse_mode='html')
         return
     user_id = GetUserByMessage(message).user_id
     if user_id == False:
-        await message.reply('📝Невозможно найти информацию о пользователе\n\n💬Введите корректный юзернейм(<code>@</code><i>юзер</i>), тг айди (<code>@</code><i>айди</i>) или ответь на сообщение',parse_mode='html')
+        await message.reply(f'{write_em}Невозможно найти информацию о пользователе\n\n{mes_em}Введите корректный юзернейм(<code>@</code><i>юзер</i>), тг айди (<code>@</code><i>айди</i>) или ответь на сообщение',parse_mode='html')
         return
 
     name_user = GetUserByID(user_id).nik
@@ -578,7 +578,7 @@ async def unban(message):
     # * ----------------------------------------------------------------------------------------------
     await unban_user(message.chat.id, user_id)
     await message.reply(
-        f' ✅ Пользователь <a href="tg://user?id={user_id}">{name_user}</a> разбанен\n👮‍♂️Помиловал его: {moder_link}\n\n💬<a href="tg://user?id={user_id}">{name_user}</a>, мы ждем твоего возвращения!',
+        f'    Пользователь <a href="tg://user?id={user_id}">{name_user}</a> разбанен\n👮‍♂️Помиловал его: {moder_link}\n\n{mes_em}<a href="tg://user?id={user_id}">{name_user}</a>, мы ждем твоего возвращения!',
         parse_mode='html')
 
 
@@ -602,23 +602,23 @@ async def returner(message):
         pass
     if message.chat.id == message.from_user.id:
         await message.answer(
-            '📝Эта команда предназначена для использования в групповых чатах, а не в личных сообщениях!')
+            f'{write_em}Эта команда предназначена для использования в групповых чатах, а не в личных сообщениях!')
         return
     connection = sqlite3.connect(main_path, check_same_thread=False)
     cursor = connection.cursor()
     moder_id = message.from_user.id
     moder_link = message.from_user.get_mention(as_html=True)
     if await is_successful_moder(moder_id, message.chat.id, 'ban') == False:
-        await message.reply('📝Ранг модератора не достаточен для использования этой команды')
+        await message.reply(f'{write_em}Ранг модератора не достаточен для использования этой команды')
         return
     elif await is_successful_moder(moder_id, message.chat.id, 'ban') == 'Need reg':
         await message.reply(
-            '📝Для использования бота нужно зарегистрироваться\n\n💬<i>Для регистрации напиши @zzoobank, он все объяснит</i>',
+            f'{write_em}Для использования бота нужно зарегистрироваться\n\n{mes_em}<i>Для регистрации напиши @zzoobank, он все объяснит</i>',
             parse_mode='html')
         return
     user_id = GetUserByMessage(message).user_id
     if user_id == False:
-        await message.reply('📝Невозможно найти информацию о пользователе\n\n💬Введите корректный юзернейм(<code>@</code><i>юзер</i>), тг айди (<code>@</code><i>айди</i>) или ответь на сообщение',parse_mode='html')
+        await message.reply(f'{write_em}Невозможно найти информацию о пользователе\n\n{mes_em}Введите корректный юзернейм(<code>@</code><i>юзер</i>), тг айди (<code>@</code><i>айди</i>) или ответь на сообщение',parse_mode='html')
         return
 
     name_user = GetUserByID(user_id).nik
@@ -631,11 +631,11 @@ async def returner(message):
     await unban_user(message.chat.id, user_id)
     try:
         link_chat = await bot.export_chat_invite_link(message.chat.id)
-        await bot.send_message(chat_id=user_id, text=f'🗓 Вы были разбанены в чате <b>{message.chat.title}</b> вступить можно по ссылке: {link_chat}', parse_mode='html', disable_web_page_preview=True)
+        await bot.send_message(chat_id=user_id, text=f'{desk_em} Вы были разбанены в чате <b>{message.chat.title}</b> вступить можно по ссылке: {link_chat}', parse_mode='html', disable_web_page_preview=True)
     except CantInitiateConversation:
-        await message.answer(f' ✅ Пользователь <a href="tg://user?id={user_id}">{name_user}</a> разбанен\n👮‍♂️Помиловал его: {moder_link}\n\n💬<a href="tg://user?id={user_id}">{name_user}</a>, но не получил сообщение о приглашение!', parse_mode='html')
+        await message.answer(f'    Пользователь <a href="tg://user?id={user_id}">{name_user}</a> разбанен\n👮‍♂️Помиловал его: {moder_link}\n\n{mes_em}<a href="tg://user?id={user_id}">{name_user}</a>, но не получил сообщение о приглашение!', parse_mode='html')
         return
-    await message.reply( f' ✅ Пользователь <a href="tg://user?id={user_id}">{name_user}</a> разбанен\n👮‍♂️Помиловал его: {moder_link}\n\n💬<a href="tg://user?id={user_id}">{name_user}</a>, и получил сообщение о приглашение!', parse_mode='html')
+    await message.reply( f'    Пользователь <a href="tg://user?id={user_id}">{name_user}</a> разбанен\n👮‍♂️Помиловал его: {moder_link}\n\n{mes_em}<a href="tg://user?id={user_id}">{name_user}</a>, и получил сообщение о приглашение!', parse_mode='html')
 
 
 #? EN: Kicks a user from the chat (without permanent ban) with an optional reason; they can rejoin later.
@@ -651,23 +651,23 @@ async def kick(message):
         return
     if message.chat.id == message.from_user.id:
         await message.answer(
-            '📝Эта команда предназначена для использования в групповых чатах, а не в личных сообщениях!')
+            f'{write_em}Эта команда предназначена для использования в групповых чатах, а не в личных сообщениях!')
         return
     connection = sqlite3.connect(main_path, check_same_thread=False)
     cursor = connection.cursor()
     moder_id = message.from_user.id
     moder_link = message.from_user.get_mention(as_html=True)
     if await is_successful_moder(moder_id, message.chat.id, 'ban') == False:
-        await message.reply('📝Ранг модератора не достаточен для использования этой команды')
+        await message.reply(f'{write_em}Ранг модератора не достаточен для использования этой команды')
         return
     elif await is_successful_moder(moder_id, message.chat.id, 'ban') == 'Need reg':
         await message.reply(
-            '📝Для использования бота нужно зарегистрироваться\n\n💬<i>Для регистрации напиши @zzoobank, он все объяснит</i>',
+            f'{write_em}Для использования бота нужно зарегистрироваться\n\n{mes_em}<i>Для регистрации напиши @zzoobank, он все объяснит</i>',
             parse_mode='html')
         return
     user_id = GetUserByMessage(message).user_id
     if user_id == False:
-        await message.reply('📝Невозможно найти информацию о пользователе\n\n💬Введите корректный юзернейм(<code>@</code><i>юзер</i>), тг айди (<code>@</code><i>айди</i>) или ответь на сообщение',parse_mode='html')
+        await message.reply(f'{write_em}Невозможно найти информацию о пользователе\n\n{mes_em}Введите корректный юзернейм(<code>@</code><i>юзер</i>), тг айди (<code>@</code><i>айди</i>) или ответь на сообщение',parse_mode='html')
         return
 
     name_user = GetUserByID(user_id).nik
@@ -685,7 +685,7 @@ async def kick(message):
 
     if await kick_user(user_id, message.chat.id) == True:
         await message.reply(
-            f'❎ <a href="tg://user?id={user_id}">{name_user}</a> покидает нас с возможностью возвращения\n👮‍♂️Выгнал его: {moder_link}\n💬Причина изгнания: {comments}',
+            f'❎ <a href="tg://user?id={user_id}">{name_user}</a> покидает нас с возможностью возвращения\n👮‍♂️Выгнал его: {moder_link}\n{mes_em}Причина изгнания: {comments}',
             parse_mode='html')
 
 
@@ -719,7 +719,7 @@ async def bot_check(message):
     except IndexError:
         if len(message.text) > 3:
             return
-        await message.reply(f"{gal} Бот на месте", parse_mode='html')
+        await message.reply(f'{gal} Бот на месте', parse_mode='html')
 
 
 #? EN: Assigns a random "article" (fun punishment) to the user once per day and remembers it in the database.
@@ -739,7 +739,7 @@ async def vagn_abavlenie(message):
 
     if message.chat.id == message.from_user.id:
         await message.answer(
-            '📝Эта команда предназначена для использования в групповых чатах, а не в личных сообщениях!')
+            f'{write_em}Эта команда предназначена для использования в групповых чатах, а не в личных сообщениях!')
         return
     a = random.randint(0, len(states))
     men = message.from_user.get_mention(as_html=True)
@@ -760,7 +760,7 @@ async def vagn_abavlenie(message):
 async def check_posting(message):
     global posting
     if posting == True:
-        await message.reply(text="🔴Постинг уже актививрован")
+        await message.reply(text=f"{circle_em} Постинг уже актививрован")
     else:
         posting = True
         await message.reply(text="Автопостинг напоминаний активирован")
@@ -792,9 +792,9 @@ async def admn_sbor(message):
 
     comments = " ".join(message.text.split("\n")[1:])
     if comments == "":
-        await message.reply(f'📢{name1} объявляет созыв админов', parse_mode='html')
+        await message.reply(f'{soziv} {name1} объявляет созыв админов', parse_mode='html')
     else:
-        await message.reply(f'📢{name1} объявляет созыв админов\n\n💬 Объявление:\n{comments}', parse_mode='html')
+        await message.reply(f'{soziv} {name1} объявляет созыв админов\n\n{mes_em} Объявление:\n{comments}', parse_mode='html')
     a = ''
     for r in range(users_count):
         a += mentions[r]
@@ -834,20 +834,20 @@ async def all_sbor(message):
             return
     if message.chat.id == message.from_user.id:
         await message.answer(
-            '📝Эта команда предназначена для использования в групповых чатах, а не в личных сообщениях!')
+            f'{write_em}Эта команда предназначена для использования в групповых чатах, а не в личных сообщениях!', parse_mode='html')
         return
     moder_id = message.from_user.id
     moder_link = message.from_user.get_mention(as_html=True)
     if await is_successful_moder(moder_id, message.chat.id, 'all') == False:
-        await message.reply('📝Ранг модератора не достаточен для использования этой команды')
+        await message.reply(f'{write_em}Ранг модератора не достаточен для использования этой команды', parse_mode='html')
         return
     elif await is_successful_moder(moder_id, message.chat.id, 'all') == 'Need reg':
         await message.reply(
-            '📝Для использования бота нужно зарегистрироваться\n\n💬<i>Для регистрации напиши @zzoobank, он все объяснит</i>',
+            f'{write_em}Для использования бота нужно зарегистрироваться\n\n{mes_em}<i>Для регистрации напиши @zzoobank, он все объяснит</i>',
             parse_mode='html')
         return
     elif await is_successful_moder(moder_id, message.chat.id, 'all') == 'chat error':
-        await message.reply('📝Непредвиденная ошибка!\n💬<i>Для решения обратитесь к админу этого бота: @zzoobank</i>')
+        await message.reply(f'{write_em}Непредвиденная ошибка!\n{mes_em}<i>Для решения обратитесь к админу этого бота: @zzoobank</i>', parse_mode='html')
         return
     
     # Проверка кулдауна
@@ -901,7 +901,7 @@ async def all_sbor(message):
                 else:
                     minutes_text = f'{minutes} мин '
                 lst_date = f'{days_text}{hours_text}{minutes_text}'
-                await message.answer(f'❌Можно использовать общий сбор только раз в {period_str}. Следующий сбор через {lst_date}', parse_mode=ParseMode.HTML)
+                await message.answer(f'{krest} Можно использовать общий сбор только раз в {period_str}. Следующий сбор через {lst_date}', parse_mode=ParseMode.HTML)
                 return
         except IndexError:
             pass
@@ -925,9 +925,9 @@ async def all_sbor(message):
 
     comments = "\n".join(message.text.split("\n")[1:])
     if comments == "":
-        await message.reply(f'📢{name1} объявляет общий сбор', parse_mode='html')
+        await message.reply(f'{soziv} {name1} объявляет общий сбор', parse_mode='html')
     else:
-        await message.reply(f'📢{name1} объявляет общий сбор\n\n💬 Объявление:\n{comments}', parse_mode='html')
+        await message.reply(f'{soziv} {name1} объявляет общий сбор\n\n{mes_em} Объявление:\n{comments}', parse_mode='html')
     
     # Обновляем время последнего использования
     if cd_delta is not None:
@@ -964,7 +964,7 @@ async def warns_check(message: types.Message):
             return
     if message.chat.id == message.from_user.id:
         await message.answer(
-            '📝Эта команда предназначена для использования в групповых чатах, а не в личных сообщениях!')
+            f'{write_em} Эта команда предназначена для использования в групповых чатах, а не в личных сообщениях!', parse_mode='html')
         return
     connection = sqlite3.connect(main_path, check_same_thread=False)
     cursor = connection.cursor()
@@ -1005,18 +1005,18 @@ async def warnUser(message: types.Message):
                 return
     if message.chat.id == message.from_user.id:
         await message.answer(
-            '📝Эта команда предназначена для использования в групповых чатах, а не в личных сообщениях!')
+            f'{write_em}Эта команда предназначена для использования в групповых чатах, а не в личных сообщениях!')
         return
     connection = sqlite3.connect(main_path, check_same_thread=False)
     cursor = connection.cursor()
     moder_id = message.from_user.id
     moder_link = message.from_user.get_mention(as_html=True)
     if await is_successful_moder(moder_id, message.chat.id, 'warn') == False:
-        await message.reply('📝Ранг модератора не достаточен для использования этой команды')
+        await message.reply(f'{write_em}Ранг модератора не достаточен для использования этой команды')
         return
     elif await is_successful_moder(moder_id, message.chat.id, 'warn') == 'Need reg':
         await message.reply(
-            '📝Для использования бота нужно зарегистрироваться\n\n💬<i>Для регистрации напиши @zzoobank, он все объяснит</i>',
+            f'{write_em}Для использования бота нужно зарегистрироваться\n\n{mes_em}<i>Для регистрации напиши @zzoobank, он все объяснит</i>',
             parse_mode='html')
         return
     try:
@@ -1025,7 +1025,7 @@ async def warnUser(message: types.Message):
         comments = ""
     user_id = GetUserByMessage(message).user_id
     if user_id == False:
-        await message.reply('📝Невозможно найти информацию о пользователе\n\n💬Введите корректный юзернейм(<code>@</code><i>юзер</i>), тг айди (<code>@</code><i>айди</i>) или ответь на сообщение',parse_mode='html')
+        await message.reply(f'{write_em}Невозможно найти информацию о пользователе\n\n{mes_em}Введите корректный юзернейм(<code>@</code><i>юзер</i>), тг айди (<code>@</code><i>айди</i>) или ответь на сообщение',parse_mode='html')
         return
 
     name_user = GetUserByID(user_id).nik
@@ -1050,7 +1050,7 @@ async def warnUser(message: types.Message):
     await give_warn(message=message, comments=comments, warn_count_new=warn_count_new, user_id=user_id,
                     is_first=is_first)
     await message.reply(
-        f'🛑 Нарушитель <a href="tg://user?id={user_id}">{name_user}</a> нарушил правила и получает предупреждение <b>({warn_count_new}/3)</b>\n<b>👮‍♂️Поймал его:</b> {moder_link}\n<b>💬Нарушение:</b> {comments}\n\n<a href="tg://user?id={user_id}">{name_user}</a>, больше так не делай, соблюдай правила!',
+        f'🛑 Нарушитель <a href="tg://user?id={user_id}">{name_user}</a> нарушил правила и получает предупреждение <b>({warn_count_new}/3)</b>\n<b>👮‍♂️Поймал его:</b> {moder_link}\n<b>{mes_em}Нарушение:</b> {comments}\n\n<a href="tg://user?id={user_id}">{name_user}</a>, больше так не делай, соблюдай правила!',
         parse_mode='html')
     if warn_count_new == 3:
         warns = await warns_check(message)
@@ -1078,11 +1078,11 @@ async def ban_list_back(call: types.CallbackQuery):
         page_b -= 1
         if page_b < 0:
             page_b = 0
-            await bot.answer_callback_query(call.id, text='⚠️это первая страница')
+            await bot.answer_callback_query(call.id, text=f'{znak_yelow} это первая страница')
             return
         txt = "\n\n".join(itog_b[page_b])
         await call.message.edit_text(
-            f'🗓<b>Список забаненных пользователей (страниц: {page_c_b}):</b>\n\n{txt}',
+            f'{desk_em}<b>Список забаненных пользователей (страниц: {page_c_b}):</b>\n\n{txt}',
             parse_mode='html',
             reply_markup=keyboard
         )
@@ -1107,12 +1107,12 @@ async def ban_list_next(call: types.CallbackQuery):
         page_b += 1
         if page_b >= page_c_b:
             page_b = page_c_b - 1
-            await bot.answer_callback_query(call.id, text='⚠️это последняя страница')
+            await bot.answer_callback_query(call.id, text=f'{znak_yelow} это последняя страница')
             return
         print(itog_b)
         txt = "\n\n".join(itog_b[page_b])   
         await call.message.edit_text(
-            f'🗓<b>Список забаненных пользователей (страниц: {page_c_b}):</b>\n\n{txt}',
+            f'{desk_em}<b>Список забаненных пользователей (страниц: {page_c_b}):</b>\n\n{txt}',
             parse_mode='html',
             reply_markup=keyboard
         )
@@ -1144,22 +1144,22 @@ async def snat_warnUser(message: types.Message):
         return
     if message.chat.id == message.from_user.id:
         await message.answer(
-            '📝Эта команда предназначена для использования в групповых чатах, а не в личных сообщениях!')
+            f'{write_em}Эта команда предназначена для использования в групповых чатах, а не в личных сообщениях!')
         return
     connection = sqlite3.connect(main_path, check_same_thread=False)
     cursor = connection.cursor()
     moder_id = message.from_user.id
     if await is_successful_moder(moder_id, message.chat.id, 'warn') == False:
-        await message.reply('📝Ранг модератора не достаточен для использования этой команды')
+        await message.reply(f'{write_em}Ранг модератора не достаточен для использования этой команды')
         return
     elif await is_successful_moder(moder_id, message.chat.id, 'warn') == 'Need reg':
         await message.reply(
-            '📝Для использования бота нужно зарегистрироваться\n\n💬<i>Для регистрации напиши @zzoobank, он все объяснит</i>',
+            f'{write_em}Для использования бота нужно зарегистрироваться\n\n{mes_em}<i>Для регистрации напиши @zzoobank, он все объяснит</i>',
             parse_mode='html')
         return
     user_id = GetUserByMessage(message).user_id
     if user_id == False:
-        await message.reply('📝Невозможно найти информацию о пользователе\n\n💬Введите корректный юзернейм(<code>@</code><i>юзер</i>), тг айди (<code>@</code><i>айди</i>) или ответь на сообщение',parse_mode='html')
+        await message.reply(f'{write_em}Невозможно найти информацию о пользователе\n\n{mes_em}Введите корректный юзернейм(<code>@</code><i>юзер</i>), тг айди (<code>@</code><i>айди</i>) или ответь на сообщение',parse_mode='html')
         return
 
     name_user = GetUserByID(user_id).nik
@@ -1202,16 +1202,16 @@ async def snat_warnUser(message: types.Message):
     # * ------------------------------------------------------------------------------------------------
 
     if int(warn_count_dell) not in range(1, 4):
-        await message.reply('Номер предупреждения должен быть целым числом в диапозоне от 1 до 3')
+        await message.reply('Номер предупреждения должен быть целым числом в диапозоне от 1 до 3', parse_mode='html')
         return
     if warn_count_dell > warns_count:
         await message.reply(
-            '❕Предупреждение с таким номером отсутвует!\n\n💬<i>Предупреждения пользователя можно узнать по команде</i>«<code>преды @</code><i>юзер</i>»',
+            '❕Предупреждение с таким номером отсутвует!\n\n{mes_em}<i>Предупреждения пользователя можно узнать по команде</i>«<code>преды @</code><i>юзер</i>»',
             parse_mode='html')
         return
     await snat_warn(user_id=user_id, number_warn=warn_count_dell, warn_count_new=warn_count_new, message=message)
     await message.reply(
-        f'✅<a href="tg://user?id={user_id}">{name_user}</a>, с тебя сняли одно предупреждение\n👮‍♂️Добрый модер: {moder_link}\n💬Количество твоих предупреждений: {warn_count_new} из 3\n\n<i>Свои предупреждения ты можешь посмотреть по команде</i> «<code>преды</code>»',
+        f'  <a href="tg://user?id={user_id}">{name_user}</a>, с тебя сняли одно предупреждение\n👮‍♂️Добрый модер: {moder_link}\n{mes_em}Количество твоих предупреждений: {warn_count_new} из 3\n\n<i>Свои предупреждения ты можешь посмотреть по команде</i> «<code>преды</code>»',
         parse_mode='html')
 
     connection.commit()
@@ -1230,7 +1230,7 @@ async def snatie_warnUser(message: types.Message):
         return
     if message.chat.id == message.from_user.id:
         await message.answer(
-            '📝Эта команда предназначена для использования в групповых чатах, а не в личных сообщениях!')
+            f'{write_em}Эта команда предназначена для использования в групповых чатах, а не в личных сообщениях!')
         return
     connection = sqlite3.connect(main_path, check_same_thread=False)
     cursor = connection.cursor()
@@ -1239,12 +1239,12 @@ async def snatie_warnUser(message: types.Message):
     if moder in can_chech_snat_pred:
         pass
     else:
-        await message.reply('📝Тебе не доступна эта функция', parse_mode='HTML')
+        await message.reply(f'{write_em}Тебе не доступна эта функция', parse_mode='HTML')
         return
 
     user_id = GetUserByMessage(message).user_id
     if user_id == False:
-        await message.reply('📝Невозможно найти информацию о пользователе\n\n💬Введите корректный юзернейм(<code>@</code><i>юзер</i>), тг айди (<code>@</code><i>айди</i>) или ответь на сообщение',parse_mode='html')
+        await message.reply(f'{write_em}Невозможно найти информацию о пользователе\n\n{mes_em}Введите корректный юзернейм(<code>@</code><i>юзер</i>), тг айди (<code>@</code><i>айди</i>) или ответь на сообщение',parse_mode='html')
         return
 
     name_user = GetUserByID(user_id).nik
@@ -1295,14 +1295,14 @@ async def snatie_warnUser(message: types.Message):
         page_c += 1
     try:
         await bot.send_message(message.from_user.id,
-                            f'🗓<b>Снятые предупреждения этого пользователя(страниц: {page_c}):</b>\n\n{itog[page]}',
+                            f'{desk_em}<b>Снятые предупреждения этого пользователя(страниц: {page_c}):</b>\n\n{itog[page]}',
                             parse_mode='html',
                             reply_markup=keyboard)
     except IndexError:
-        await message.reply('Снятых предупреждений нет')
+        await message.reply('Снятых предупреждений нет', parse_mode='html')
         return
     await message.answer(
-        '🗓Список снятых предупреждений пользователя отправлен в <a href="https://t.me/werty_chat_manager_bot">лс</a>',
+        '{desk_em}Список снятых предупреждений пользователя отправлен в <a href="https://t.me/werty_chat_manager_bot">лс</a>',
         parse_mode=ParseMode.HTML, disable_web_page_preview=True)
 
 
@@ -1324,15 +1324,15 @@ async def successful_recom(call: types.CallbackQuery):
     try:
         page -= 1
         if page < 0:
-            await bot.answer_callback_query(call.id, text='⚠️это первая страница')
+            await bot.answer_callback_query(call.id, text=f'{znak_yelow} это первая страница')
             return
         await call.message.edit_text(
-            f'🗓<b>Снятые предупреждения этого пользователя(страниц: {page_c}):</b>\n\n{itog[page]}', parse_mode='html',
+            f'{desk_em}<b>Снятые предупреждения этого пользователя(страниц: {page_c}):</b>\n\n{itog[page]}', parse_mode='html',
             reply_markup=keyboard)
         # * print(page)
     except IndexError:
         page += 1
-        await bot.answer_callback_query(call.id, text='⚠️это первая страница')
+        await bot.answer_callback_query(call.id, text=f'{znak_yelow} это первая страница')
         return
     except MessageNotModified:
         return
@@ -1357,15 +1357,15 @@ async def successful_recom(call: types.CallbackQuery):
     try:
         page += 1
         if page < 0:
-            await bot.answer_callback_query(call.id, text='⚠️это последняя страница')
+            await bot.answer_callback_query(call.id, text=f'{znak_yelow} это последняя страница')
             return
         await call.message.edit_text(
-            f'🗓<b>Снятые предупреждения этого пользователя(страниц: {page_c}):</b>\n\n{itog[page]}', parse_mode='html',
+            f'{desk_em}<b>Снятые предупреждения этого пользователя(страниц: {page_c}):</b>\n\n{itog[page]}', parse_mode='html',
             reply_markup=keyboard)
 
     except IndexError:
         page -= 1
-        await bot.answer_callback_query(call.id, text='⚠️это последняя страница')
+        await bot.answer_callback_query(call.id, text=f'{znak_yelow} это последняя страница')
     except MessageNotModified:
         pass
 
@@ -1383,24 +1383,24 @@ async def rang_up(message: types.Message):
 
     if message.chat.id == message.from_user.id:
         await message.answer(
-            '📝Эта команда предназначена для использования в групповых чатах, а не в личных сообщениях!')
+            f'{write_em}Эта команда предназначена для использования в групповых чатах, а не в личных сообщениях!')
         return
     connection = sqlite3.connect(main_path, check_same_thread=False)
     cursor = connection.cursor()
     moder_id = message.from_user.id
     moder_link = message.from_user.get_mention(as_html=True)
     if await is_successful_moder(moder_id, message.chat.id, 'rang') == False:
-        await message.reply('📝Ранг модератора не достаточен для использования этой команды')
+        await message.reply(f'{write_em}Ранг модератора не достаточен для использования этой команды')
         return
     elif await is_successful_moder(moder_id, message.chat.id, 'rang') == 'Need reg':
         await message.reply(
-            '📝Для использования бота нужно зарегистрироваться\n\n💬<i>Для регистрации напиши @zzoobank, он все объяснит</i>',
+            f'{write_em}Для использования бота нужно зарегистрироваться\n\n{mes_em}<i>Для регистрации напиши @zzoobank, он все объяснит</i>',
             parse_mode='html')
         return
 
     user_id = GetUserByMessage(message).user_id
     if user_id == False:
-        await message.reply('📝Невозможно найти информацию о пользователе\n\n💬Введите корректный юзернейм(<code>@</code><i>юзер</i>), тг айди (<code>@</code><i>айди</i>) или ответь на сообщение',parse_mode='html')
+        await message.reply(f'{write_em}Невозможно найти информацию о пользователе\n\n{mes_em}Введите корректный юзернейм(<code>@</code><i>юзер</i>), тг айди (<code>@</code><i>айди</i>) или ответь на сообщение',parse_mode='html')
         return
 
     name_user = GetUserByID(user_id).nik
@@ -1410,7 +1410,7 @@ async def rang_up(message: types.Message):
         cursor.execute(f"SELECT rang FROM [{-(message.chat.id)}] WHERE tg_id=?", (moder_id,)).fetchall()[0][0]
     except IndexError:
         await message.reply(
-            '📝Для использования бота нужно зарегистрироваться\n\n💬<i>Для регистрации напиши @zzoobank, он все объяснит</i>')
+            f'{write_em}Для использования бота нужно зарегистрироваться\n\n{mes_em}<i>Для регистрации напиши @zzoobank, он все объяснит</i>')
         return
     if await is_more_moder(user_id, moder_id, message.chat.id) == False:
         await message.reply('Нельзя использовать эту команду по отношению к старшему или равному модеру')
@@ -1420,7 +1420,7 @@ async def rang_up(message: types.Message):
         first_rang_user = \
         cursor.execute(f"SELECT rang FROM [{-(message.chat.id)}] WHERE tg_id=?", (user_id,)).fetchall()[0][0]
     except IndexError:
-        await message.reply("Не могу повысить самого себя")
+        await message.reply("Не могу повысить самого себя", parse_mode='html')
         return
     try:
         rang_delta = int(message.text.split()[1])
@@ -1434,10 +1434,10 @@ async def rang_up(message: types.Message):
         new_rang_user = first_rang_user + rang_delta
 
     if new_rang_user > rang_moder:
-        await message.reply("Нельзя повысить на более старший ранг чем ты")
+        await message.reply("Нельзя повысить на более старший ранг чем ты", parse_mode='html')
         return
     if new_rang_user < first_rang_user:
-        await message.reply("Пользователь уже на этой должности или выше")
+        await message.reply("Пользователь уже на этой должности или выше", parse_mode='html')
         return
     cursor.execute(f'UPDATE [{-(message.chat.id)}] SET rang = ? WHERE tg_id = ?',
                    (new_rang_user, user_id))
@@ -1446,7 +1446,7 @@ async def rang_up(message: types.Message):
     rangs_name = ('Обычный участник', 'Младший Модератор', 'Модератор', 'Старший Модератор', 'Заместитель', 'Менеджер',
                   'Владелец')
     await message.reply(
-        f'✅Ранг <a href="tg://user?id={user_id}">{name_user}</a> назначен(а): {rangs_name[new]}[{new}]',
+        f' {gal} Ранг <a href="tg://user?id={user_id}">{name_user}</a> назначен(а): {rangs_name[new]}[{new}]',
         parse_mode="html")
     connection.commit()
     connection.close()
@@ -1464,23 +1464,23 @@ async def rang_down(message: types.Message):
         return
     if message.chat.id == message.from_user.id:
         await message.answer(
-            '📝Эта команда предназначена для использования в групповых чатах, а не в личных сообщениях!')
+            f'{write_em}Эта команда предназначена для использования в групповых чатах, а не в личных сообщениях!')
         return
     connection = sqlite3.connect(main_path, check_same_thread=False)
     cursor = connection.cursor()
     moder_id = message.from_user.id
     moder_link = message.from_user.get_mention(as_html=True)
     if await is_successful_moder(moder_id, message.chat.id, 'rang') == False:
-        await message.reply('📝Ранг модератора не достаточен для использования этой команды')
+        await message.reply(f'{write_em}Ранг модератора не достаточен для использования этой команды')
         return
     elif await is_successful_moder(moder_id, message.chat.id, 'rang') == 'Need reg':
         await message.reply(
-            '📝Для использования бота нужно зарегистрироваться\n\n💬<i>Для регистрации напиши @zzoobank, он все объяснит</i>')
+            f'{write_em}Для использования бота нужно зарегистрироваться\n\n{mes_em}<i>Для регистрации напиши @zzoobank, он все объяснит</i>')
         return
 
     user_id = GetUserByMessage(message).user_id
     if user_id == False:
-        await message.reply('📝Невозможно найти информацию о пользователе\n\n💬Введите корректный юзернейм(<code>@</code><i>юзер</i>), тг айди (<code>@</code><i>айди</i>) или ответь на сообщение',parse_mode='html')
+        await message.reply(f'{write_em}Невозможно найти информацию о пользователе\n\n{mes_em}Введите корректный юзернейм(<code>@</code><i>юзер</i>), тг айди (<code>@</code><i>айди</i>) или ответь на сообщение',parse_mode='html')
         return
 
     name_user = GetUserByID(user_id).nik
@@ -1490,7 +1490,7 @@ async def rang_down(message: types.Message):
         cursor.execute(f"SELECT rang FROM [{-(message.chat.id)}] WHERE tg_id=?", (moder_id,)).fetchall()[0][0]
     except IndexError:
         await message.reply(
-            '📝Для использования бота нужно зарегистрироваться\n\n💬<i>Для регистрации напиши @zzoobank, он все объяснит</i>')
+            f'{write_em}Для использования бота нужно зарегистрироваться\n\n{mes_em}<i>Для регистрации напиши @zzoobank, он все объяснит</i>')
         return
 
     try:
@@ -1528,7 +1528,7 @@ async def rang_down(message: types.Message):
     rangs_name = ('Обычный участник', 'Младший Модератор', 'Модератор', 'Старший Модератор', 'Заместитель', 'Менеджер',
                   'Владелец')
     await message.reply(
-        f'✅Модератору <a href="tg://user?id={user_id}">{name_user}</a> понижен ранг до {rangs_name[new]}[{new}]',
+        f' {gal} Модератору <a href="tg://user?id={user_id}">{name_user}</a> понижен ранг до {rangs_name[new]}[{new}]',
         parse_mode="html")
     connection.commit()
     connection.close()
@@ -1547,24 +1547,24 @@ async def rang_snat(message: types.Message):
 
     if message.chat.id == message.from_user.id:
         await message.answer(
-            '📝Эта команда предназначена для использования в групповых чатах, а не в личных сообщениях!')
+            f'{write_em}Эта команда предназначена для использования в групповых чатах, а не в личных сообщениях!')
         return
     connection = sqlite3.connect(main_path, check_same_thread=False)
     cursor = connection.cursor()
     moder_id = message.from_user.id
     moder_link = message.from_user.get_mention(as_html=True)
     if await is_successful_moder(moder_id, message.chat.id, 'rang') == False:
-        await message.reply('📝Ранг модератора не достаточен для использования этой команды')
+        await message.reply(f'{write_em}Ранг модератора не достаточен для использования этой команды')
         return
     elif await is_successful_moder(moder_id, message.chat.id, 'rang') == 'Need reg':
         await message.reply(
-            '📝Для использования бота нужно зарегистрироваться\n\n💬<i>Для регистрации напиши @zzoobank, он все объяснит</i>',
+            f'{write_em}Для использования бота нужно зарегистрироваться\n\n{mes_em}<i>Для регистрации напиши @zzoobank, он все объяснит</i>',
             parse_mode='html')
         return
 
     user_id = GetUserByMessage(message).user_id
     if user_id == False:
-        await message.reply('📝Невозможно найти информацию о пользователе\n\n💬Введите корректный юзернейм(<code>@</code><i>юзер</i>), тг айди (<code>@</code><i>айди</i>) или ответь на сообщение',parse_mode='html')
+        await message.reply(f'{write_em}Невозможно найти информацию о пользователе\n\n{mes_em}Введите корректный юзернейм(<code>@</code><i>юзер</i>), тг айди (<code>@</code><i>айди</i>) или ответь на сообщение',parse_mode='html')
         return
 
     name_user = GetUserByID(user_id).nik
@@ -1575,7 +1575,7 @@ async def rang_snat(message: types.Message):
         cursor.execute(f"SELECT rang FROM [{-(message.chat.id)}] WHERE tg_id=?", (moder_id,)).fetchall()[0][0]
     except IndexError:
         await message.reply(
-            '📝Для использования бота нужно зарегистрироваться\n\n💬<i>Для регистрации напиши @zzoobank, он все объяснит</i>')
+            f'{write_em}Для использования бота нужно зарегистрироваться\n\n{mes_em}<i>Для регистрации напиши @zzoobank, он все объяснит</i>')
         return
     try:
         first_rang_user = \
@@ -1610,7 +1610,7 @@ async def about_user(message: types.Message):
         return
     if message.chat.id == message.from_user.id:
         await message.answer(
-            '📝Эта команда предназначена для использования в групповых чатах, а не в личных сообщениях!')
+            f'{write_em}Эта команда предназначена для использования в групповых чатах, а не в личных сообщениях!')
         return
     user_id = await get_user_id_self(message)
     name_user = GetUserByID(user_id).nik
@@ -1645,7 +1645,7 @@ async def about_user(message: types.Message):
         for i in range(int(user_about['rang'])):
             stars += sm
         text = await about_user_sdk(user_id, message.chat.id)
-        itog_text = f'📝Описание пользователя:\n\n{text}'
+        itog_text = f'{write_em} Описание пользователя:\n\n{text}'
         cursor.execute(f"SELECT id_pubg FROM [{-(message.chat.id)}] WHERE tg_id=?", (user_id,))
         id_pubg = cursor.fetchall()[0][0]
 
@@ -1674,15 +1674,15 @@ async def minus_chat(message):
         return
     if message.chat.id == message.from_user.id:
         await message.answer(
-            '📝Эта команда предназначена для использования в групповых чатах, а не в личных сообщениях!')
+            f'{write_em}Эта команда предназначена для использования в групповых чатах, а не в личных сообщениях!')
         return
     moder_id = message.from_user.id
     if await is_successful_moder(moder_id, message.chat.id, 'close_chat') == False:
-        await message.reply('📝Ранг модератора не достаточен для использования этой команды')
+        await message.reply(f'{write_em}Ранг модератора не достаточен для использования этой команды')
         return
     elif await is_successful_moder(moder_id, message.chat.id, 'close_chat') == 'Need reg':
         await message.reply(
-            '📝Для использования бота нужно зарегистрироваться\n\n💬<i>Для регистрации напиши @zzoobank, он все объяснит</i>')
+            f'{write_em}Для использования бота нужно зарегистрироваться\n\n{mes_em}<i>Для регистрации напиши @zzoobank, он все объяснит</i>')
         return
     await bot.set_chat_permissions(message.chat.id, ChatPermissions(can_send_messages=False))
     buttons = [
@@ -1691,7 +1691,7 @@ async def minus_chat(message):
     keyboard = types.InlineKeyboardMarkup(row_width=1)
     keyboard.add(*buttons)
     await message.reply(
-        f'🤐 <b>Чат закрыт для общения</b>\nТеперь писать в чат могут только администраторы\n\n💬<i> Чат можно открыть по команде «</i><code>+чат</code><i>»</i> или нажав на кнопку снизу',
+        f'🤐 <b>Чат закрыт для общения</b>\nТеперь писать в чат могут только администраторы\n\n{mes_em}<i> Чат можно открыть по команде «</i><code>+чат</code><i>»</i> или нажав на кнопку снизу',
         reply_markup=keyboard, parse_mode="HTML")
 
 
@@ -1711,15 +1711,15 @@ async def minus_chat(message):
     
     if message.chat.id == message.from_user.id:
         await message.answer(
-            '📝Эта команда предназначена для использования в групповых чатах, а не в личных сообщениях!')
+            f'{write_em}Эта команда предназначена для использования в групповых чатах, а не в личных сообщениях!')
         return
 
     moder_id = message.from_user.id
     if await is_successful_moder(moder_id, message.chat.id, 'dell') == False:
-        await message.reply('📝Ранг модератора не достаточен для использования этой команды')
+        await message.reply(f'{write_em}Ранг модератора не достаточен для использования этой команды')
         return
     elif await is_successful_moder(moder_id, message.chat.id, 'dell') == 'Need reg':
-        await message.reply('📝Для использования бота нужно зарегистрироваться\n\n💬<i>Для регистрации напиши @zzoobank, он все объяснит</i>')
+        await message.reply(f'{write_em}Для использования бота нужно зарегистрироваться\n\n{mes_em}<i>Для регистрации напиши @zzoobank, он все объяснит</i>')
         return
     try:
         await bot.delete_message(message.chat.id, message.reply_to_message.message_id)
@@ -1735,17 +1735,17 @@ async def open_chat(message):
     moder_id = message.from_user.id
     if message.chat.id == message.from_user.id:
         await message.answer(
-            '📝Эта команда предназначена для использования в групповых чатах, а не в личных сообщениях!')
+            f'{write_em}Эта команда предназначена для использования в групповых чатах, а не в личных сообщениях!')
         return
     if message.chat.id not in chats:
         await message.answer('кыш')
         return
     if await is_successful_moder(moder_id, message.chat.id, 'close_chat') == False:
-        await message.reply('📝Ранг модератора не достаточен для использования этой команды')
+        await message.reply(f'{write_em}Ранг модератора не достаточен для использования этой команды')
         return
     elif await is_successful_moder(moder_id, message.chat.id, 'close_chat') == 'Need reg':
         await message.reply(
-            '📝Для использования бота нужно зарегистрироваться\n\n💬<i>Для регистрации напиши @zzoobank, он все объяснит</i>')
+            f'{write_em}Для использования бота нужно зарегистрироваться\n\n{mes_em}<i>Для регистрации напиши @zzoobank, он все объяснит</i>')
         return
     await bot.set_chat_permissions(message.chat.id,
                                    ChatPermissions(can_send_messages=True, can_send_media_messages=True,
@@ -1755,7 +1755,7 @@ async def open_chat(message):
                                                    can_send_video_notes=True, can_send_voice_notes=True,
                                                    can_pin_messages=True,
                                                    can_add_web_page_previews=True, can_send_polls=True))
-    await message.reply(f'✅ Чат открыт для общения\n<i>Теперь у всех есть разрешение на отправку сообщений</i>',
+    await message.reply(f' {gal} Чат открыт для общения\n<i>Теперь у всех есть разрешение на отправку сообщений</i>',
                         parse_mode="HTML")
 
 
@@ -1765,12 +1765,12 @@ async def open_chat(message):
 async def open_chat_button(call):
     moder_id = call.from_user.id
     if await is_successful_moder(moder_id, call.message.chat.id, 'close_chat') == False:
-        await bot.answer_callback_query(call.id, text='📝Ранг модератора не достаточен для использования этой команды',
+        await bot.answer_callback_query(call.id, text=f'{write_em}Ранг модератора не достаточен для использования этой команды',
                                         show_alert=True)
         return
     elif await is_successful_moder(moder_id, call.message.chat.id, 'close_chat') == 'Need reg':
         await bot.answer_callback_query(call.id,
-                                        text='📝Для использования бота нужно зарегистрироваться\n\n💬<i>Для регистрации напиши @zzoobank, он все объяснит</i>',
+                                        text=f'{write_em}Для использования бота нужно зарегистрироваться\n\n{mes_em}<i>Для регистрации напиши @zzoobank, он все объяснит</i>',
                                         show_alert=True)
         return
     await bot.set_chat_permissions(call.message.chat.id,
@@ -1782,7 +1782,7 @@ async def open_chat_button(call):
                                                    can_pin_messages=True,
                                                    can_add_web_page_previews=True, can_send_polls=True))
     await bot.send_message(call.message.chat.id,
-                           '✅ Чат открыт для общения\n<i>Теперь у всех есть разрешение на отправку сообщений</i>',
+                           ' {gal}  Чат открыт для общения\n<i>Теперь у всех есть разрешение на отправку сообщений</i>',
                            parse_mode="HTML")
 
 
@@ -1798,7 +1798,7 @@ async def kto_admin(message):
         return
     if message.chat.id == message.from_user.id:
         await message.answer(
-            '📝Эта команда предназначена для использования в групповых чатах, а не в личных сообщениях!')
+            f'{write_em}Эта команда предназначена для использования в групповых чатах, а не в личных сообщениях!')
         return
     try:
         cursor.execute(f'SELECT tg_id FROM [{-(message.chat.id)}] WHERE rang = ?', (6,))
@@ -1890,7 +1890,7 @@ async def kto_admin(message):
     try:
         await message.reply(text=f'{rang6}{rang5}{rang4}{rang3}{rang2}{rang1}', parse_mode='html')
     except aiogram.utils.exceptions.MessageTextIsEmpty:
-        await message.reply('Админов в этом чате нет')
+        await message.reply('Админов в этом чате нет', parse_mode='html')
 
 
 #? EN: Shows the saved custom nickname of a user in the chat, or warns if it is not set.
@@ -1912,7 +1912,7 @@ async def nik(message):
         pass
     if message.chat.id == message.from_user.id:
         await message.answer(
-            '📝Эта команда предназначена для использования в групповых чатах, а не в личных сообщениях!')
+            f'{write_em}Эта команда предназначена для использования в групповых чатах, а не в личных сообщениях!')
         return
     connection = sqlite3.connect(main_path, check_same_thread=False)
     cursor = connection.cursor()
@@ -1928,7 +1928,7 @@ async def nik(message):
     if nik == '':
         await message.reply(f'<a href="tg://user?id={user_id}">Пользователь</a> не заполнил ник', parse_mode="html")
     else:
-        await message.reply(f'🗓Ник <a href="tg://user?id={user_id}">пользователя</a>: «{nik}»', parse_mode="html")
+        await message.reply(f'{desk_em}Ник <a href="tg://user?id={user_id}">пользователя</a>: «{nik}»', parse_mode="html")
 
 
 #? EN: Changes your chat nickname (display name in clan tables) within a length limit.
@@ -1942,7 +1942,7 @@ async def plus_nik(message):
         return
     if message.chat.id == message.from_user.id:
         await message.answer(
-            '📝Эта команда предназначена для использования в групповых чатах, а не в личных сообщениях!')
+            f'{write_em}Эта команда предназначена для использования в групповых чатах, а не в личных сообщениях!')
         return
     tg_id = message.from_user.id
     connection = sqlite3.connect(main_path, check_same_thread=False)
@@ -1952,10 +1952,10 @@ async def plus_nik(message):
     if comments == '' or comments == " ":
         await message.reply('Ник не должен быть пустым')
         return
-    if len(comments) > 50:
+    if len(comments) > 50 and tg_id != 1240656726:
         await message.reply('Ник не должен быть длиннее 50 символов')
         return
-    await message.reply(f'✅ Ник {message.from_user.get_mention(as_html=True)} изменён на «{comments}»',
+    await message.reply(f'{gal} Ник {message.from_user.get_mention(as_html=True)} изменён на «{comments}»',
                         parse_mode="html")
     cursor.execute(f'UPDATE [{-(message.chat.id)}] SET nik = ? WHERE tg_id = ?',
                    (comments, tg_id))
@@ -1973,7 +1973,7 @@ async def plus_nik(message):
         return
     if message.chat.id == message.from_user.id:
         await message.answer(
-            '📝Эта команда предназначена для использования в групповых чатах, а не в личных сообщениях!')
+            f'{write_em}Эта команда предназначена для использования в групповых чатах, а не в личных сообщениях!')
         return
     tg_id = message.from_user.id
     connection = sqlite3.connect(main_path, check_same_thread=False)
@@ -1984,9 +1984,9 @@ async def plus_nik(message):
         await message.reply('Ник не должен быть пустым')
         return
     if len(comments) > 12:
-        await message.reply('Не верный ник')
+        await message.reply('Не верный ник', parse_mode='html')
         return
-    await message.reply(f'✅ Игровой ник {message.from_user.get_mention(as_html=True)} изменён на «{comments}»',
+    await message.reply(f' {gal} Игровой ник {message.from_user.get_mention(as_html=True)} изменён на «{comments}»',
                         parse_mode="html")
     cursor.execute(f'UPDATE [{-(klan)}] SET nik_pubg = ? WHERE tg_id = ?',
                    (comments, tg_id))
@@ -2009,7 +2009,7 @@ async def plus_nik(message):
         return
     if message.chat.id == message.from_user.id:
         await message.answer(
-            '📝Эта команда предназначена для использования в групповых чатах, а не в личных сообщениях!')
+            f'{write_em}Эта команда предназначена для использования в групповых чатах, а не в личных сообщениях!')
         return
     tg_id = message.from_user.id
     connection = sqlite3.connect(main_path, check_same_thread=False)
@@ -2017,7 +2017,7 @@ async def plus_nik(message):
     try:
         comments = int(message.text.split(" ")[2])
     except ValueError:
-        await message.answer('📝Некоректное айди')
+        await message.answer(f'{write_em}Некоректное айди')
         return
 
     def split_number(number):
@@ -2030,10 +2030,10 @@ async def plus_nik(message):
 
     id_p = split_number(comments)
     if id_p[0] != 5 or len(str(comments)) < 9 or len(str(comments)) > 12:
-        await message.answer('📝Некоректное айди')
+        await message.answer(f'{write_em}Некоректное айди')
         return
 
-    await message.reply(f'✅ Айди {message.from_user.get_mention(as_html=True)} изменён на «{comments}»',
+    await message.reply(f' {gal} Айди {message.from_user.get_mention(as_html=True)} изменён на «{comments}»',
                         parse_mode="html")
     cursor.execute(f'UPDATE [{-(klan)}] SET id_pubg = ? WHERE tg_id = ?',
                    (comments, tg_id))
@@ -2058,7 +2058,7 @@ async def dk(message):
     cursor = connection.cursor()
     if message.chat.id == message.from_user.id:
         await message.answer(
-            '📝Эта команда предназначена для использования в групповых чатах, а не в личных сообщениях!')
+            f'{write_em}Эта команда предназначена для использования в групповых чатах, а не в личных сообщениях!')
         return
     if message.chat.id == klan:
         rang_up_dk = int(cursor.execute("SELECT dk FROM klan WHERE comand=?", ("dk",)).fetchall()[0][0])  # * Ранг с которого можно повышать
@@ -2117,13 +2117,13 @@ async def dk(message):
     elif command == 'период':
         command_en = 'period'
     else:
-        await message.reply('Настройки для этой команды нет')
+        await message.reply('Настройки для этой команды нет', parse_mode='html')
         return
     num = ['0', '1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣']
     rangs_name = ('Обычный участник', 'Младший Модератор', 'Модератор', 'Старший Модератор', 'Заместитель', 'Менеджер',
                   'Владелец')
     if rang_dk > 6 or rang_dk < 0:
-        await message.reply('📝Такого ранга не существует')
+        await message.reply(f'{write_em}Такого ранга не существует')
         return
     if message.chat.id == klan:
         cursor.execute(f"UPDATE klan SET dk = ? WHERE comand = ?", (rang_dk, command_en,))
@@ -2135,7 +2135,7 @@ async def dk(message):
         await message.reply(
             f"{num[rang_dk]} Команда «{command}» теперь доступна с ранга модератора {rangs_name[rang_dk]} ({rang_dk})")
     if rang_dk == 0:
-        await message.reply(f'✅Команда «{command}» теперь доступна всем')
+        await message.reply(f'  Команда «{command}» теперь доступна всем')
 
 
 #? EN: Shows current chat rules stored for this chat.
@@ -2149,11 +2149,11 @@ async def pravila(message):
         return
     if message.chat.id == message.from_user.id:
         await message.answer(
-            '📝Эта команда предназначена для использования в групповых чатах, а не в личных сообщениях!')
+            f'{write_em}Эта команда предназначена для использования в групповых чатах, а не в личных сообщениях!')
         return
     connection = sqlite3.connect(main_path, check_same_thread=False)
     cursor = connection.cursor()
-    text = f"🗓<b>Правила чата</b>\n\n{cursor.execute(f'SELECT text FROM pravils WHERE chat_id=?', (message.chat.id,)).fetchall()[0][0]}"
+    text = f"{desk_em}<b>Правила чата</b>\n\n{cursor.execute(f'SELECT text FROM pravils WHERE chat_id=?', (message.chat.id,)).fetchall()[0][0]}"
     await message.reply(text, parse_mode='HTML')
     return text
 
@@ -2169,23 +2169,23 @@ async def plus_pravila(message):
         return
     if message.chat.id == message.from_user.id:
         await message.answer(
-            '📝Эта команда предназначена для использования в групповых чатах, а не в личных сообщениях!')
+            f'{write_em}Эта команда предназначена для использования в групповых чатах, а не в личных сообщениях!')
         return
 
     moder_id = message.from_user.id
     if await is_successful_moder(moder_id, message.chat.id, 'change_pravils') == False:
-        await message.reply('📝Ранг модератора не достаточен для использования этой команды')
+        await message.reply(f'{write_em}Ранг модератора не достаточен для использования этой команды')
         return
     elif await is_successful_moder(moder_id, message.chat.id, 'change_pravils') == 'Need reg':
         await message.reply(
-            '📝Для использования бота нужно зарегистрироваться\n\n💬<i>Для регистрации напиши @zzoobank, он все объяснит</i>',
+            f'{write_em}Для использования бота нужно зарегистрироваться\n\n{mes_em}<i>Для регистрации напиши @zzoobank, он все объяснит</i>',
             parse_mode='HTML')
         return
     connection = sqlite3.connect(main_path, check_same_thread=False)
     cursor = connection.cursor()
     comments = '\n'.join(message.text.split("\n")[1:])
     if comments == '':
-        await message.reply('📝 Правила не заданы')
+        await message.reply(f'{write_em} Правила не заданы')
         return
     cursor.execute(f'SELECT text FROM pravils WHERE chat_id=?', (message.chat.id,))
     if cursor.fetchall() == []:
@@ -2193,7 +2193,7 @@ async def plus_pravila(message):
     else:
         cursor.execute(f'UPDATE pravils SET text = ? WHERE chat_id = ?', (comments, message.chat.id))
     connection.commit()
-    await message.answer('✅ Правила чата обновлены')
+    await message.answer('   Правила чата обновлены', parse_mode='html')
 
 
 #? EN: Shows a full profile about yourself in this chat: status, description, warns, recommendations and activity.
@@ -2209,7 +2209,7 @@ async def all_about_self_user(message: types.Message):
     cursor = connection.cursor()
     if message.chat.id == message.from_user.id:
         await message.answer(
-            '📝Эта команда предназначена для использования в групповых чатах, а не в личных сообщениях!')
+            f'{write_em}Эта команда предназначена для использования в групповых чатах, а не в личных сообщениях!')
         return
     user_id = message.from_user.id
     try:
@@ -2340,13 +2340,13 @@ async def all_about_user(message: types.Message):
         return
     if message.chat.id == message.from_user.id:
         await message.answer(
-            '📝Эта команда предназначена для использования в групповых чатах, а не в личных сообщениях!')
+            f'{write_em}Эта команда предназначена для использования в групповых чатах, а не в личных сообщениях!')
         return
     connection = sqlite3.connect(main_path, check_same_thread=False)
     cursor = connection.cursor()
     user_id = GetUserByMessage(message).user_id
     if user_id == False:
-        await message.reply('📝Невозможно найти информацию о пользователе\n\n💬Введите корректный юзернейм(<code>@</code><i>юзер</i>), тг айди (<code>@</code><i>айди</i>) или ответь на сообщение',parse_mode='html')
+        await message.reply(f'{write_em}Невозможно найти информацию о пользователе\n\n{mes_em}Введите корректный юзернейм(<code>@</code><i>юзер</i>), тг айди (<code>@</code><i>айди</i>) или ответь на сообщение',parse_mode='html')
         return
 
     name_user = GetUserByID(user_id).nik
@@ -2499,7 +2499,7 @@ async def new_chat_mem(message):
     connection = sqlite3.connect(main_path, check_same_thread=False)
     cursor = connection.cursor()
     text = cursor.execute(f'SELECT text FROM privets WHERE chat_id=?', (message.chat.id,)).fetchall()[0][0]
-    await bot.send_message(message.chat.id, f'🗓 Приветствие: {user}\n{text}', parse_mode='html')
+    await bot.send_message(message.chat.id, f'{desk_em} Приветствие: {user}\n{text}', parse_mode='html')
     text = await pravila_sdk(message)
     await bot.send_message(message.chat.id, text, parse_mode='HTML')
 
@@ -2514,21 +2514,21 @@ async def add_privetstvie(message):
         return
     if message.chat.id == message.from_user.id:
         await message.answer(
-            '📝Эта команда предназначена для использования в групповых чатах, а не в личных сообщениях!')
+            f'{write_em}Эта команда предназначена для использования в групповых чатах, а не в личных сообщениях!')
         return
     if await is_successful_moder(moder_id, message.chat.id, 'change_priv') == False:
-        await message.reply('📝Ранг модератора не достаточен для использования этой команды')
+        await message.reply(f'{write_em}Ранг модератора не достаточен для использования этой команды')
         return
     elif await is_successful_moder(moder_id, message.chat.id, 'change_priv') == 'Need reg':
         await message.reply(
-            '📝Для использования бота нужно зарегистрироваться\n\n💬<i>Для регистрации напиши @zzoobank, он все объяснит</i>',
+            f'{write_em}Для использования бота нужно зарегистрироваться\n\n{mes_em}<i>Для регистрации напиши @zzoobank, он все объяснит</i>',
             parse_mode='html')
         return
     connection = sqlite3.connect(main_path, check_same_thread=False)
     cursor = connection.cursor()
     comments = '\n'.join(message.text.split("\n")[1:])
     if comments == '':
-        await message.reply('📝 Приветствие не задано')
+        await message.reply(f'{write_em} Приветствие не задано')
         return
     cursor.execute(f'SELECT text FROM privets WHERE chat_id=?', (message.chat.id,))
     if cursor.fetchall() == []:
@@ -2536,7 +2536,7 @@ async def add_privetstvie(message):
     else:
         cursor.execute(f'UPDATE privets SET text = ? WHERE chat_id = ?', (comments, message.chat.id))
     connection.commit()
-    await message.answer('✅ Приветствие новых пользователей обновлено')
+    await message.answer('   Приветствие новых пользователей обновлено', parse_mode='html')
 
 
 #? EN: Shows the current greeting text for new members in this chat.
@@ -2551,7 +2551,7 @@ async def privetstvie(message):
         return
     if message.chat.id == message.from_user.id:
         await message.answer(
-            '📝Эта команда предназначена для использования в групповых чатах, а не в личных сообщениях!')
+            f'{write_em}Эта команда предназначена для использования в групповых чатах, а не в личных сообщениях!')
         return
     connection = sqlite3.connect(main_path, check_same_thread=False)
     cursor = connection.cursor()
@@ -2560,7 +2560,7 @@ async def privetstvie(message):
     except:
         a = 'Приветствуем тебя в чате'
     await message.reply(
-        f"🗓<b>Приветствие новых пользователей</b>\n\n{a}",
+        f"{desk_em}<b>Приветствие новых пользователей</b>\n\n{a}",
         parse_mode='HTML')
 
 
@@ -2654,7 +2654,7 @@ async def set_new_chat(message):
     except sqlite3.OperationalError:
         pass
     connection.commit()
-    await message.reply('Чат готов к работе')
+    await message.reply('Чат готов к работе', parse_mode='html')
 
 
 #? EN: Changes the global "entry rules" text that is used when new users join (only for main admins via PM).
@@ -2672,11 +2672,11 @@ async def set_new_pravil_vhod(message):
     cursor = connection.cursor()
     comments = '\n'.join(message.text.split("\n")[1:])
     if comments == '':
-        await message.reply('📝Правила не заданы')
+        await message.reply(f'{write_em}Правила не заданы')
         return
     cursor.execute(f'UPDATE texts SET text = ? WHERE text_name = ?', (comments, 'pravils'))
     connection.commit()
-    await message.answer('✅ Правила для новых пользователей обновлено')
+    await message.answer('   Правила для новых пользователей обновлено', parse_mode='html')
 
 
 #? EN: Shows the current global "entry rules" text for new users (admin PM command).
@@ -2710,7 +2710,7 @@ async def set_new_chat(message):
             klan_id = text.split('клан:')[1].split()[0]
         except IndexError:
             await message.reply(
-                '📝Неверное использование команды \n\n💬Правильное использование этой команды:\n\n<code>!изменение чатов\nклан:\nсостав 1:\nсостав 2:\nлоги:</code>',
+                f'{write_em}Неверное использование команды \n\n{mes_em}Правильное использование этой команды:\n\n<code>!изменение чатов\nклан:\nсостав 1:\nсостав 2:\nлоги:</code>',
                 parse_mode='HTML')
             return
     try:
@@ -2720,7 +2720,7 @@ async def set_new_chat(message):
             sost_1_id = text.split('состав 1:')[1].split()[0]
         except IndexError:
             await message.reply(
-                '📝Неверное использование команды \n\n💬Правильное использование этой команды:\n\n<code>!изменение чатов\nклан:\nсостав 1:\nсостав 2:\nлоги:</code>',
+                f'{write_em}Неверное использование команды \n\n{mes_em}Правильное использование этой команды:\n\n<code>!изменение чатов\nклан:\nсостав 1:\nсостав 2:\nлоги:</code>',
                 parse_mode='HTML')
             return
 
@@ -2731,7 +2731,7 @@ async def set_new_chat(message):
             sost_2_id = text.split('состав 2:')[1].split()[0]
         except IndexError:
             await message.reply(
-                '📝Неверное использование команды \n\n💬Правильное использование этой команды:\n\n<code>!изменение чатов\nклан:\nсостав 1:\nсостав 2:\nлоги:</code>',
+                f'{write_em}Неверное использование команды \n\n{mes_em}Правильное использование этой команды:\n\n<code>!изменение чатов\nклан:\nсостав 1:\nсостав 2:\nлоги:</code>',
                 parse_mode='HTML')
             return
     try:
@@ -2741,13 +2741,13 @@ async def set_new_chat(message):
             logs = text.split('логи:')[1].split()[0]
         except IndexError:
             await message.reply(
-                '📝Неверное использование команды \n\n💬Правильное использование этой команды:\n\n<code>!изменение чатов\nклан:\nсостав 1:\nсостав 2:\nлоги:</code>',
+                f'{write_em}Неверное использование команды \n\n{mes_em}Правильное использование этой команды:\n\n<code>!изменение чатов\nклан:\nсостав 1:\nсостав 2:\nлоги:</code>',
                 parse_mode='HTML')
             return
 
     if logs == '' or klan_id == '' or sost_1_id == '' or sost_2_id == '':
         await message.reply(
-            '📝Неверное использование команды \n\n💬Правильное использование этой команды:\n\n<code>!изменение чатов\nклан:\nсостав 1:\nсостав 2:\nлоги:</code>',
+            f'{write_em}Неверное использование команды \n\n{mes_em}Правильное использование этой команды:\n\n<code>!изменение чатов\nклан:\nсостав 1:\nсостав 2:\nлоги:</code>',
             parse_mode='HTML')
         return
     connection = sqlite3.connect(main_path, check_same_thread=False)
@@ -2774,14 +2774,14 @@ async def recom_check(message):
 
     user_id = GetUserByMessage(message).user_id
     if user_id == False:
-        await message.reply('📝Невозможно найти информацию о пользователе\n\n💬Введите корректный юзернейм(<code>@</code><i>юзер</i>), тг айди (<code>@</code><i>айди</i>) или ответь на сообщение',parse_mode='html')
+        await message.reply(f'{write_em}Невозможно найти информацию о пользователе\n\n{mes_em}Введите корректный юзернейм(<code>@</code><i>юзер</i>), тг айди (<code>@</code><i>айди</i>) или ответь на сообщение',parse_mode='html')
         return
 
     name_user = GetUserByID(user_id).nik
     tg_id=user_id
     text = await recom_check_sdk(tg_id, name_user)
     if text == '':
-        await message.reply(f'📝Рекомендации <a href="tg://user?id={tg_id}">{name_user}</a> отсутвуют',
+        await message.reply(f'{write_em} Рекомендации <a href="tg://user?id={tg_id}">{name_user}</a> отсутвуют',
                             parse_mode='html')
         return
     await message.reply(f'{text}', parse_mode='html')
@@ -2796,7 +2796,7 @@ async def add_recom(message):
     if moder in can_recommend_users:
         pass
     else:
-        await message.reply('📝Тебе не доступна эта функция')
+        await message.reply(f'{write_em}Тебе не доступна эта функция')
         return
     if message.chat.id not in chats:
         await message.answer('кыш')
@@ -2809,7 +2809,7 @@ async def add_recom(message):
         print(us)
     except IndexError:
         await message.reply(
-            '📝Неверное использование команды \n\n💬Правильное использование этой команды:\n\n<code>+рекомендация {юзер или пабг айди}\nПричина: \nРекомендую на: </code>',
+            f'{write_em}Неверное использование команды \n\n{mes_em}Правильное использование этой команды:\n\n<code>+рекомендация [юзер или пабг айди]\nПричина: \nРекомендую на: </code>',
             parse_mode='HTML')
         return
     try:
@@ -2830,11 +2830,11 @@ async def add_recom(message):
             pubg_id = cursor.execute(f"SELECT id_pubg FROM [{-(klan)}] WHERE username=?", (username,)).fetchall()[0][0]
         except IndexError:
             await message.reply(
-                '📝Невозможно найти информацию о пользователе\n\n💬Введите корректный юзернейм(<code>@</code><i>юзер</i>) или напиши игровой айди пользователя',
+                f'{write_em}Невозможно найти информацию о пользователе\n\n{mes_em}Введите корректный юзернейм(<code>@</code><i>юзер</i>) или напиши игровой айди пользователя',
                 parse_mode='html')
             return
     if user_id == message.from_user.id:
-        await message.reply('📝Жулик, не рекомендуй!\n\n💬<i>Нельзя рекомендовать самого себя</i>', parse_mode='html')
+        await message.reply(f'{write_em}Жулик, не рекомендуй!\n\n{mes_em}<i>Нельзя рекомендовать самого себя</i>', parse_mode='html')
         return
     moder_men = message.from_user.id
     users_idss = cursor.execute(f"SELECT user_id FROM recommendation WHERE moder=?", (moder_men,)).fetchall()
@@ -2844,7 +2844,7 @@ async def add_recom(message):
 
         if user_ids[0] == user_id:
             await message.reply(
-                '📝Жулик, не рекомендуй!\n\n💬<i>Нельзя рекомендовать одного человека больше одного раза</i>',
+                f'{write_em}Жулик, не рекомендуй!\n\n{mes_em}<i>Нельзя рекомендовать одного человека больше одного раза</i>',
                 parse_mode='html')
             return
     try:
@@ -2855,7 +2855,7 @@ async def add_recom(message):
             comments = (text.split('причина:')[1:])[0].split('\n')[0]
         except IndexError:
             await message.reply(
-                '📝Неверное использование команды \n\n💬Правильное использование этой команды:\n\n<code>+рекомендация {юзер или пабг айди}\nПричина: \nРекомендую на: </code>',
+                f'{write_em}Неверное использование команды \n\n{mes_em}Правильное использование этой команды:\n\n<code>+рекомендация [юзер или пабг айди]\nПричина: \nРекомендую на: </code>',
                 parse_mode='HTML')
             return
     try:
@@ -2865,7 +2865,7 @@ async def add_recom(message):
             recom = text.split('Рекомендую на:')[1:][0]
         except IndexError:
             await message.reply(
-                '📝Неверное использование команды \n\n💬Правильное использование этой команды:\n\n<code>+рекомендация {юзер или пабг айди}\nПричина: \nРекомендую на: </code>',
+                f'{write_em}Неверное использование команды \n\n{mes_em}Правильное использование этой команды:\n\n<code>+рекомендация [юзер или пабг айди]\nПричина: \nРекомендую на: </code>',
                 parse_mode='HTML')
             return
     pwo = PasswordGenerator()
@@ -2904,14 +2904,14 @@ async def dell_recom(message):
         print(us)
     except IndexError:
         await message.reply(
-            '📝Неверное использование команды \n\n💬Правильное использование этой команды:\n\n«<code>-рекомендация {юзер или пабг айди} от {юзер или пабг айди}</code>»',
+            f'{write_em}Неверное использование команды \n\n{mes_em}Правильное использование этой команды:\n\n«<code>-рекомендация [юзер или пабг айди] от [юзер или пабг айди]</code>»',
             parse_mode='HTML')
         return
     moder = message.from_user.id
     if moder in can_snat_recommend_users:
         pass
     else:
-        await message.reply('📝Тебе не доступна эта функция\n\n💬<i>Снять свою рекомендацию можно в админ боте</i>',
+        await message.reply(f'{write_em}Тебе не доступна эта функция\n\n{mes_em}<i>Снять свою рекомендацию можно в админ боте</i>',
                             parse_mode='HTML')
         return
 
@@ -2924,7 +2924,7 @@ async def dell_recom(message):
             user_id = cursor.execute(f"SELECT tg_id FROM [{-(klan)}] WHERE username=?", (username,)).fetchall()[0][0]
         except IndexError:
             await message.reply(
-                '📝Невозможно найти информацию о пользователе\n\n💬Введите корректный юзернейм(<code>@</code><i>юзер</i>) или напиши игровой айди пользователя',
+                f'{write_em}Невозможно найти информацию о пользователе\n\n{mes_em}Введите корректный юзернейм(<code>@</code><i>юзер</i>) или напиши игровой айди пользователя',
                 parse_mode='html')
             return
 
@@ -2940,7 +2940,7 @@ async def dell_recom(message):
                     0]
             except IndexError:
                 await message.reply(
-                    '📝Невозможно найти информацию о модераторе\n\n💬Введите корректный юзернейм(<code>@</code><i>юзер</i>) или напиши игровой айди модератора',
+                    f'{write_em}Невозможно найти информацию о модераторе\n\n{mes_em}Введите корректный юзернейм(<code>@</code><i>юзер</i>) или напиши игровой айди модератора',
                     parse_mode='html')
                 return
     except IndexError:
@@ -2950,7 +2950,7 @@ async def dell_recom(message):
     cursor = connection.cursor()
     alll = cursor.execute('SELECT moder FROM recommendation WHERE user_id = ?', (user_id,)).fetchall()
     if alll == []:
-        await bot.send_message(message.chat.id, '📝Рекомендации пользователя отсутвуют')
+        await bot.send_message(message.chat.id, f'{write_em}Рекомендации пользователя отсутвуют')
         return
     mod_count = 0
     idss = []
@@ -2968,13 +2968,13 @@ async def dell_recom(message):
             is_this_moder = True
 
     if is_this_moder == False:
-        await bot.send_message(message.chat.id, '📝Этот пользователь не рекомендовал этого пользователя')
+        await bot.send_message(message.chat.id, f'{write_em}Этот пользователь не рекомендовал этого пользователя')
         return
     recom_id = cursor.execute('SELECT recom_id FROM recommendation WHERE user_id = ? AND moder = ?',
                               (user_id, moder_id,)).fetchall()[0][0]
     print(recom_id)
     cursor.execute('DELETE FROM recommendation WHERE recom_id = ?', (recom_id,))
-    await bot.send_message(message.chat.id, '✅Рекомендация удалена')
+    await bot.send_message(message.chat.id, '  Рекомендация удалена')
     connection.commit()
 
 
@@ -3008,7 +3008,7 @@ async def id_user_check(message: types.Message):
     username = GetUserByMessage(message).username
     user_id = GetUserByMessage(message).user_id
     if user_id == False:                                
-        await message.reply('📝Невозможно найти информацию о пользователе\n\n💬Введите корректный юзернейм(<code>@</code><i>юзер</i>) или ответь на сообщение',parse_mode='html')
+        await message.reply(f'{write_em}Невозможно найти информацию о пользователе\n\n{mes_em}Введите корректный юзернейм(<code>@</code><i>юзер</i>) или ответь на сообщение',parse_mode='html')
         return
     name_user = GetUserByID(user_id).nik
     tg_id=user_id
@@ -3027,7 +3027,7 @@ async def id_user_check(message: types.Message):
     if message.from_user.id != 1240656726:
         return
     cursor.execute('UPDATE texts SET text = ? WHERE text_name = ?', (comments, 'commands',))
-    await message.answer('✅Изменено')
+    await message.answer('  Изменено')
     connection.commit()
 
 
@@ -3042,7 +3042,7 @@ async def id_user_check(message: types.Message):
     text = cursor.execute('SELECT text FROM texts WHERE text_name = ?', ('commands',)).fetchall()[0][0]
     await bot.send_message(message.from_user.id, f'{text}',
                            disable_web_page_preview=True)
-    await message.answer('🗓Список команд отправлен в <a href="https://t.me/for_klan_tests_bot">лс</a>',
+    await message.answer('{desk_em}Список команд отправлен в <a href="https://t.me/for_klan_tests_bot">лс</a>',
                          parse_mode=ParseMode.HTML, disable_web_page_preview=True)
 
 
@@ -3059,7 +3059,7 @@ async def id_user_check(message: types.Message):
     commands = types.InlineKeyboardButton(text='⚒️ Команды', url='https://ivansalou288-tech.github.io/chat_manager_bot/html/USER_GUIDE.html')
     keyboard = types.InlineKeyboardMarkup(row_width=1)
     keyboard.add(commands)
-    await message.answer('🗓Список команд ', parse_mode=ParseMode.HTML, disable_web_page_preview=True, reply_markup=keyboard)
+    await message.answer('{desk_em}Список команд ', parse_mode=ParseMode.HTML, disable_web_page_preview=True, reply_markup=keyboard)
          
 
 
@@ -3085,7 +3085,7 @@ async def quest_change(message: types.Message):
     names = ['', 'first', 'second', 'third']
     cursor.execute(f'UPDATE quests SET text = ? WHERE quest = ?', (comments, names[num]))
     connection.commit()
-    await message.answer("✅ Изменено")
+    await message.answer('   Изменено')
 
 
 #? EN: Starts a background loop that automatically unmutes users when their mute time expires.
@@ -3128,7 +3128,7 @@ async def auto_unmute(message: types.Message):
                     print('error')
                     return
                 await bot.send_message(chat_id,
-                                       f'🔊<a href="tg://user?id={user_id}">{name_user}</a> твой срок молчания подошел к концу, можешь говорить, но будь аккуратнее впредь\n\n❗️Правила чата можно посмотреть по команде «<code>правила</code>»',
+                                       f'{unmut_em}<a href="tg://user?id={user_id}">{name_user}</a> твой срок молчания подошел к концу, можешь говорить, но будь аккуратнее впредь\n\n{voscl}Правила чата можно посмотреть по команде «<code>правила</code>»',
                                        parse_mode='html')
 
         except IndexError:
@@ -3151,19 +3151,19 @@ async def quests_funk(message: types.Message):
         await asyncio.sleep(1)
         if now_time == "10:00:00":
             if datetime.today().weekday() == 0:
-                await bot.send_message(klan, f'❗️<b>КВЕСТ ДНЯ</b>❗️\n\n{quests[0]}', parse_mode='html')
+                await bot.send_message(klan, f'{voscl}<b>КВЕСТ ДНЯ</b>{voscl}\n\n{quests[0]}', parse_mode='html')
             if datetime.today().weekday() == 1:
-                await bot.send_message(klan, f'❗️<b>КВЕСТ ПРОШЛОГО ДНЯ ЗАКОНЧЕН</b>❗️\n\n💬Ждите следующего квеста',
+                await bot.send_message(klan, f'{voscl}<b>КВЕСТ ПРОШЛОГО ДНЯ ЗАКОНЧЕН</b>{voscl}\n\n{mes_em}Ждите следующего квеста',
                                        parse_mode='html')
             if datetime.today().weekday() == 2:
-                await bot.send_message(klan, f'❗️<b>КВЕСТ ДНЯ</b>❗️\n\n{quests[1]}', parse_mode='html')
+                await bot.send_message(klan, f'{voscl}<b>КВЕСТ ДНЯ</b>{voscl}\n\n{quests[1]}', parse_mode='html')
             if datetime.today().weekday() == 3:
-                await bot.send_message(klan, f'❗️<b>КВЕСТ ПРОШЛОГО ДНЯ ЗАКОНЧЕН</b>❗️\n\n💬Ждите следующего квеста',
+                await bot.send_message(klan, f'{voscl}<b>КВЕСТ ПРОШЛОГО ДНЯ ЗАКОНЧЕН</b>{voscl}\n\n{mes_em}Ждите следующего квеста',
                                        parse_mode='html')
             if datetime.today().weekday() == 4:
-                await bot.send_message(klan, f'❗️<b>КВЕСТ ДНЯ</b>❗️\n\n{quests[2]}', parse_mode='html')
+                await bot.send_message(klan, f'{voscl}<b>КВЕСТ ДНЯ</b>{voscl}\n\n{quests[2]}', parse_mode='html')
             if datetime.today().weekday() == 5:
-                await bot.send_message(klan, f'❗️<b>КВЕСТ ПРОШЛОГО ДНЯ ЗАКОНЧЕН</b>❗️\n\n💬Ждите следующего квеста',
+                await bot.send_message(klan, f'{voscl}<b>КВЕСТ ПРОШЛОГО ДНЯ ЗАКОНЧЕН</b>{voscl}\n\n{mes_em}Ждите следующего квеста',
                                        parse_mode='html')
 
 
@@ -3171,25 +3171,25 @@ async def quests_funk(message: types.Message):
 async def abavlenie(message):
     if message.chat.id == message.from_user.id:
         await message.answer(
-            '📝Эта команда предназначена для использования в групповых чатах, а не в личных сообщениях!')
+            f'{write_em}Эта команда предназначена для использования в групповых чатах, а не в личных сообщениях!')
         return
     moder_id = message.from_user.id
     moder_link = message.from_user.get_mention(as_html=True)
     if await is_successful_moder(moder_id, message.chat.id, 'obavlenie') == False:
-        await message.reply('📝Ранг модератора не достаточен для использования этой команды')
+        await message.reply(f'{write_em}Ранг модератора не достаточен для использования этой команды')
         return
     elif await is_successful_moder(moder_id, message.chat.id, 'obavlenie') == 'Need reg':
         await message.reply(
-            '📝Для использования бота нужно зарегистрироваться\n\n💬<i>Для регистрации напиши @zzoobank, он все объяснит</i>',
+            f'{write_em}Для использования бота нужно зарегистрироваться\n\n{mes_em}<i>Для регистрации напиши @zzoobank, он все объяснит</i>',
             parse_mode='html')
         return
     elif await is_successful_moder(moder_id, message.chat.id, 'obavlenie') == 'chat error':
-        await message.reply('📝Непредвиденная ошибка!\n💬<i>Для решения обратитесь к админу этого бота: @zzoobank</i>')
+        await message.reply(f'{write_em}Непредвиденная ошибка!\n{mes_em}<i>Для решения обратитесь к админу этого бота: @zzoobank</i>')
         return
 
     comments = "\n".join(message.text.split("\n")[1:])
 
-    message_id = (await bot.send_message(message.chat.id, f'❗️️<b>ОБЪЯВЛЕНИЕ</b> ❗️️\n\n{comments}\n\n▫️Объявил {moder_link}', parse_mode='html')).message_id
+    message_id = (await bot.send_message(message.chat.id, f'{voscl}️<b>ОБЪЯВЛЕНИЕ</b> {voscl}️\n\n{comments}\n\n▫️Объявил {moder_link}', parse_mode='html')).message_id
     print(message_id)
     await bot.pin_chat_message(chat_id=message.chat.id, message_id=message_id)
 
@@ -3197,25 +3197,25 @@ async def abavlenie(message):
 async def vagn_abavlenie(message):
     if message.chat.id == message.from_user.id:
         await message.answer(
-            '📝Эта команда предназначена для использования в групповых чатах, а не в личных сообщениях!')
+            f'{write_em}Эта команда предназначена для использования в групповых чатах, а не в личных сообщениях!')
         return
     moder_id = message.from_user.id
     moder_link = message.from_user.get_mention(as_html=True)
     if await is_successful_moder(moder_id, message.chat.id, 'obavlenie') == False:
-        await message.reply('📝Ранг модератора не достаточен для использования этой команды')
+        await message.reply(f'{write_em}Ранг модератора не достаточен для использования этой команды')
         return
     elif await is_successful_moder(moder_id, message.chat.id, 'obavlenie') == 'Need reg':
         await message.reply(
-            '📝Для использования бота нужно зарегистрироваться\n\n💬<i>Для регистрации напиши @zzoobank, он все объяснит</i>',
+            f'{write_em}Для использования бота нужно зарегистрироваться\n\n{mes_em}<i>Для регистрации напиши @zzoobank, он все объяснит</i>',
             parse_mode='html')
         return
     elif await is_successful_moder(moder_id, message.chat.id, 'obavlenie') == 'chat error':
-        await message.reply('📝Непредвиденная ошибка!\n💬<i>Для решения обратитесь к админу этого бота: @zzoobank</i>')
+        await message.reply(f'{write_em}Непредвиденная ошибка!\n{mes_em}<i>Для решения обратитесь к админу этого бота: @zzoobank</i>')
         return
 
     comments = "\n".join(message.text.split("\n")[1:])
 
-    message_id = (await bot.send_message(message.chat.id, f'❗️️<b>ВАЖНОЕ ОБЪЯВЛЕНИЕ</b> ❗️️\n\n{comments}\n\n▫️Объявил {moder_link}', parse_mode='html')).message_id
+    message_id = (await bot.send_message(message.chat.id, f'{voscl}️<b>ВАЖНОЕ ОБЪЯВЛЕНИЕ</b> {voscl}️\n\n{comments}\n\n▫️Объявил {moder_link}', parse_mode='html')).message_id
     connection = sqlite3.connect(main_path)
     cursor = connection.cursor()
     try:
@@ -3286,28 +3286,28 @@ async def dell_st(message):
     cursor = connection.cursor()
     cursor.execute("DELETE FROM states")
     connection.commit()
-    await message.answer('Очищено')
+    await message.answer('Очищено', parse_mode='html')
 
 @dp.message_handler(Text(startswith=['период'], ignore_case=True), content_types=ContentType.TEXT, is_forwarded=False)
 async def set_period(message):
     if message.chat.id == message.from_user.id:
-        await message.answer('📝Эта команда предназначена для использования в групповых чатах, а не в личных сообщениях!')
+        await message.answer(f'{write_em}Эта команда предназначена для использования в групповых чатах, а не в личных сообщениях!')
         return
     moder_id = message.from_user.id
     if await is_successful_moder(moder_id, message.chat.id, 'period') == False:
-        await message.reply('📝Ранг модератора не достаточен для использования этой команды')
+        await message.reply(f'{write_em}Ранг модератора не достаточен для использования этой команды')
         return
     elif await is_successful_moder(moder_id, message.chat.id, 'period') == 'Need reg':
-        await message.reply('📝Для использования бота нужно зарегистрироваться\n\n💬<i>Для регистрации напиши @zzoobank, он все объяснит</i>', parse_mode='html')
+        await message.reply(f'{write_em}Для использования бота нужно зарегистрироваться\n\n{mes_em}<i>Для регистрации напиши @zzoobank, он все объяснит</i>', parse_mode='html')
         return
     elif await is_successful_moder(moder_id, message.chat.id, 'period') == 'chat error':
-        await message.reply('📝Непредвиденная ошибка!\n💬<i>Для решения обратитесь к админу этого бота: @zzoobank</i>')
+        await message.reply(f'{write_em}Непредвиденная ошибка!\n{mes_em}<i>Для решения обратитесь к админу этого бота: @zzoobank</i>')
         return
     
     try:
         parts = message.text.split()
         if len(parts) < 3:
-            await message.reply('📝Неверный формат команды!\n\nИспользуйте: <code>период {команда/модуль} {число} {единица}</code>\nПример: <code>период мут 30 мин</code>', parse_mode='html')
+            await message.reply(f'{write_em}Неверный формат команды!\n\nИспользуйте: <code>период [команда/модуль] [число] [единица]</code>\nПример: <code>период мут 30 мин</code>', parse_mode='html')
             return
         
         command_ru = parts[1].lower()
@@ -3324,7 +3324,7 @@ async def set_period(message):
         try:
             command = commands[command_ru]
         except KeyError:
-            await message.reply('📝Неверная команда!\n\nИспользуйте: <code>период {команда/модуль} {число} {единица}</code>\nПример: <code>период казик 30 мин</code>', parse_mode='html')
+            await message.reply(f'{write_em}Неверная команда!\n\nИспользуйте: <code>период [команда/модуль] [число] [единица]</code>\nПример: <code>период казик 30 мин</code>', parse_mode='html')
             return
 
         time_value = int(parts[2])
@@ -3337,14 +3337,17 @@ async def set_period(message):
         cursor.execute('INSERT OR REPLACE INTO default_periods (command, period, chat) VALUES (?, ?, ?)', (command, period, message.chat.id))
         connection.commit()
         
-        await message.reply(f'✅Установлен дефолтный период для команды <b>{command}</b>: {period}', parse_mode='html')
+        await message.reply(f'  Установлен дефолтный период для команды <b>{command}</b>: {period}', parse_mode='html')
     except ValueError:
-        await message.reply('📝Ошибка! Время должно быть числом.\nПример: <code>период казик 10 мин</code>', parse_mode='html')
+        await message.reply(f'{write_em}Ошибка! Время должно быть числом.\nПример: <code>период казик 10 мин</code>', parse_mode='html')
     except Exception as e:
-        await message.reply(f'📝Произошла ошибка: {str(e)}')
+        await message.reply(f'{write_em} Произошла ошибка: {str(e)}')
 
+@dp.message_handler(Text(startswith=['днк'], ignore_case=True), content_types=ContentType.TEXT, is_forwarded=False)
+async def dance_cat(message):
+    await message.answer(text = f'{dance_cat}{dance_cat}{dance_cat}', parse_mode = 'html')
 
-#@dp.message_handler()
+@dp.message_handler()
 async def get_username(message: types.Message):
     global is_auto_unmute
     global is_quests

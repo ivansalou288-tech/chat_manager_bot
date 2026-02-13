@@ -95,13 +95,24 @@ sunday="Доброе утро пидоры! \nПидор 1 наблюдает, �
 week_count = 1
 posting = False
 
-gal = '<tg-emoji emoji-id="5462919317832082236"></tg-emoji>'
-dance_cat = '<tg-emoji emoji-id="5235465481992809720"></tg-emoji>'
-block = '<tg-emoji emoji-id="5240241223632954241"></tg-emoji>'
-voscl = '<tg-emoji emoji-id="5440660757194744323"></tg-emoji>'
-soziv = '<tg-emoji emoji-id="5424818078833715060"></tg-emoji>'
-dance_ezh = '<tg-emoji emoji-id="6262672546521423618"></tg-emoji>'
-
+gal = '<tg-emoji emoji-id="5462919317832082236">✅</tg-emoji>'
+dance_cat = '<tg-emoji emoji-id="5235465481992809720">🐈</tg-emoji>'
+block = '<tg-emoji emoji-id="5240241223632954241">🚫</tg-emoji>'
+voscl = '<tg-emoji emoji-id="5440660757194744323">❗</tg-emoji>'
+soziv = '<tg-emoji emoji-id="5424818078833715060">📢</tg-emoji>'
+dance_ezh = '<tg-emoji emoji-id="6262672546521423618">🦔</tg-emoji>'
+mes_em = '<tg-emoji emoji-id="5443038326535759644">💬</tg-emoji>'
+mut_em = '<tg-emoji emoji-id="5462990730253319917">🔇</tg-emoji>'
+time_em = '<tg-emoji emoji-id="5440621591387980068">🕰️</tg-emoji>'
+zloy_cat = '<tg-emoji emoji-id="5235850315357497516">👿</tg-emoji>'
+unmut_em = '<tg-emoji emoji-id="5388632425314140043">🔊</tg-emoji>'
+desk_em = '<tg-emoji emoji-id="5413879192267805083">🗓️</tg-emoji>'
+write_em = '<tg-emoji emoji-id="5215209935188534658">📝</tg-emoji>'
+circle_em = '<tg-emoji emoji-id="5411225014148014586">🔴</tg-emoji>'
+znak_yelow = '<tg-emoji emoji-id="5447644880824181073">⚠️</tg-emoji>'
+krest = '<tg-emoji emoji-id="5210952531676504517">❌</tg-emoji>'
+money = '<tg-emoji emoji-id="5422444280473998663">🍊</tg-emoji>'
+mesh_money = '<tg-emoji emoji-id="5224257782013769471">💰</tg-emoji>'
 #? EN: Who can recommend and remove recommendations
 #* RU: Кто может рекомендовать и снимать рекомендации
 can_recommend_users = [8015726709, 1401086794, 1240656726, 5714854312, 1803851598, 5740021109]
