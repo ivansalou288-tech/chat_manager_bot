@@ -254,6 +254,7 @@ class GetUserByID:
         self.rang = self.getRangByID(self.user_id)
         self.last_date = self.getLastDateByID(self.user_id)
         self.date_vhod = self.getDateVhodByID(self.user_id)
+        self.mention = self.getUserMention(self.user_id)
 
     def getUsernameByID(self, user_id):
         try:
@@ -311,6 +312,10 @@ class GetUserByID:
             return date_vhod
         except IndexError:
             return 'Отсутвует'
+    def getUserMention(self, user_id):
+        name = cursor.execute(f"SELECT nik FROM [{-(klan)}] WHERE tg_id=?", (user_id, )).fetchall()[0][0]
+        mention = f'<a href="tg://user?id={user_id}">{name}</a>'
+        return mention
 
 
 #? EN: Retrieves and formats user recommendations from database
