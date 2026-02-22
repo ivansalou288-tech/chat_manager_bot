@@ -166,8 +166,8 @@ async def start(message):
 
     await bot.send_photo(message.chat.id,photo=open(f'{curent_path}/photos/klan_ava.jpg', 'rb'), caption=f'Приветсвуем тебя в <b>WERTY | Чат-менеджер</b>\n\n{is_in_klan}\n\nЧто ты хочешь сделать?', parse_mode='html',reply_markup=keyboard)
 
-#? EN: Sends the full list of chat commands when user presses the "commands" inline button.
-#* RU: Отправляет полный список команд чата, когда пользователь нажимает инлайн‑кнопку «commands».
+#? EN: Sends the full list of chat commands when user presses the "ommands" inline button.
+#* RU: Отправляет полный список команд чата, когда пользователь нажиcмает инлайн‑кнопку «commands».
 @dp.callback_query_handler(text="commands")
 async def successful_recom1(call: types.CallbackQuery):
     text = cursor.execute('SELECT text FROM texts WHERE text_name = ?', ('commands',)).fetchall()[0][0]
